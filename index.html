@@ -24,7 +24,7 @@
             transition: all 0.2s ease-in-out;
         }
         .drop-zone.dragover {
-            border-color: #3b82f6;
+            border-color: #2563eb;
             background-color: #eff6ff;
             transform: scale(1.01);
         }
@@ -69,13 +69,13 @@
                 </div>
                 <div>
                     <h1 class="font-bold text-lg text-slate-900 leading-tight">AsesmenGen <span class="text-blue-600">AI</span></h1>
-                    <p class="text-xs text-slate-500">Generator Soal Presisi Berbasis Kisi-Kisi</p>
+                    <p class="text-xs text-slate-500">Generator Soal Presisi Kisi-Kisi Kurikulum Merdeka</p>
                 </div>
             </div>
             <div class="flex items-center space-x-2">
                 <button onclick="downloadSampleExcel()" class="text-xs sm:text-sm bg-slate-100 hover:bg-slate-200 text-slate-700 font-medium py-2 px-3 rounded-lg transition flex items-center gap-2">
                     <i class="fa-solid fa-download text-blue-600"></i>
-                    <span class="hidden sm:inline">Contoh Template Excel</span>
+                    <span class="hidden sm:inline">Contoh Template Excel (8 Kolom)</span>
                     <span class="sm:hidden">Template</span>
                 </button>
             </div>
@@ -99,7 +99,7 @@
                             <span class="bg-blue-100 text-blue-700 w-6 h-6 rounded-full inline-flex items-center justify-center text-xs font-bold">1</span>
                             Unggah Dokumen Kisi-Kisi
                         </h2>
-                        <span class="text-xs font-medium text-slate-500 bg-slate-100 px-2.5 py-1 rounded-full">.XLSX, .XLS, .CSV, .DOCX</span>
+                        <span class="text-xs font-medium text-slate-500 bg-slate-100 px-2.5 py-1 rounded-full">.DOCX, .XLSX, .XLS, .CSV</span>
                     </div>
 
                     <!-- Drop Zone -->
@@ -109,15 +109,15 @@
                             <i class="fa-solid fa-cloud-arrow-up text-2xl"></i>
                         </div>
                         <p class="text-sm font-medium text-slate-700 mb-1">Klik untuk memilih file atau seret & lepas di sini</p>
-                        <p class="text-xs text-slate-400">Mendukung tabel kisi-kisi dalam format Microsoft Word (.docx) atau Excel (.xlsx)</p>
+                        <p class="text-xs text-slate-400">Otomatis membaca sel gabungan (merged cells) pada tabel Word (.docx) & Excel (.xlsx)</p>
                     </div>
 
                     <!-- Info File Terunggah -->
                     <div id="file-info" class="hidden mt-4 p-3.5 bg-blue-50/70 border border-blue-200 rounded-xl flex items-center justify-between">
                         <div class="flex items-center gap-3 overflow-hidden">
-                            <i id="file-icon" class="fa-solid fa-file-excel text-emerald-600 text-2xl flex-shrink-0"></i>
+                            <i id="file-icon" class="fa-solid fa-file-word text-blue-600 text-2xl flex-shrink-0"></i>
                             <div class="truncate">
-                                <p id="file-name" class="text-sm font-semibold text-slate-800 truncate">kisi-kisi.xlsx</p>
+                                <p id="file-name" class="text-sm font-semibold text-slate-800 truncate">kisi-kisi.docx</p>
                                 <p id="file-meta" class="text-xs text-slate-500">Siap diproses</p>
                             </div>
                         </div>
@@ -126,13 +126,37 @@
                         </button>
                     </div>
 
-                    <!-- Pratinjau Isi Kisi-Kisi -->
+                    <!-- Pratinjau Tabel Terstruktur -->
                     <div id="preview-wrapper" class="hidden mt-5">
                         <div class="flex items-center justify-between mb-2">
-                            <label class="text-xs font-semibold uppercase tracking-wider text-slate-500">Pratinjau Data Kisi-Kisi Terbaca (Dapat Diedit):</label>
-                            <span id="row-count-badge" class="text-xs bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded font-medium"></span>
+                            <label class="text-xs font-semibold uppercase tracking-wider text-slate-500">Hasil Pemetaan Tabel Kisi-Kisi:</label>
+                            <div class="flex items-center gap-2">
+                                <span id="row-count-badge" class="text-xs bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded font-medium"></span>
+                                <button onclick="toggleRawEditor()" id="toggle-raw-btn" class="text-xs text-blue-600 hover:underline font-medium">Edit Teks Mentah</button>
+                            </div>
                         </div>
-                        <textarea id="extracted-text" rows="6" class="w-full text-xs font-mono bg-slate-50 border border-slate-200 rounded-xl p-3 text-slate-700 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none" placeholder="Isi kisi-kisi akan muncul di sini..."></textarea>
+
+                        <!-- Pratinjau Tabel Visual -->
+                        <div id="table-preview-container" class="max-h-60 overflow-auto border border-slate-200 rounded-xl bg-slate-50 text-xs">
+                            <table class="min-w-full divide-y divide-slate-200">
+                                <thead class="bg-slate-100 sticky top-0 text-slate-700 font-semibold">
+                                    <tr>
+                                        <th class="px-2.5 py-2 text-left">No</th>
+                                        <th class="px-2.5 py-2 text-left">Elemen</th>
+                                        <th class="px-2.5 py-2 text-left">Materi</th>
+                                        <th class="px-2.5 py-2 text-left">Indikator Soal</th>
+                                        <th class="px-2.5 py-2 text-center">Level</th>
+                                        <th class="px-2.5 py-2 text-center">Bentuk</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="preview-table-body" class="divide-y divide-slate-200 bg-white">
+                                    <!-- Baris pratinjau dirender JS -->
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <!-- Editor Teks Mentah (Tersembunyi secara default) -->
+                        <textarea id="extracted-text" rows="6" class="hidden mt-2 w-full text-xs font-mono bg-slate-50 border border-slate-200 rounded-xl p-3 text-slate-700 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none" placeholder="Isi kisi-kisi terstruktur akan muncul di sini..."></textarea>
                     </div>
                 </div>
             </div>
@@ -143,38 +167,47 @@
                     <div>
                         <h2 class="text-base font-semibold text-slate-900 flex items-center gap-2 mb-4">
                             <span class="bg-blue-100 text-blue-700 w-6 h-6 rounded-full inline-flex items-center justify-center text-xs font-bold">2</span>
-                            Parameter & Presisi Soal
+                            Identitas & Parameter Asesmen
                         </h2>
 
                         <div class="space-y-4">
                             <div>
-                                <label class="block text-xs font-medium text-slate-700 mb-1">Mata Pelajaran / Topik Umum</label>
-                                <input type="text" id="subject-input" placeholder="Contoh: Ilmu Pengetahuan Alam (IPA)" class="w-full px-3.5 py-2 text-sm border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none">
+                                <label class="block text-xs font-medium text-slate-700 mb-1">Mata Pelajaran</label>
+                                <input type="text" id="subject-input" placeholder="Otomatis terisi dari kop file (Contoh: Pendidikan Pancasila)" class="w-full px-3.5 py-2 text-sm border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none">
                             </div>
 
                             <div class="grid grid-cols-2 gap-3">
                                 <div>
-                                    <label class="block text-xs font-medium text-slate-700 mb-1">Jenjang / Kelas</label>
-                                    <select id="grade-input" class="w-full px-3 py-2 text-sm border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none bg-white">
-                                        <option value="Sesuai Kisi-Kisi">Sesuai Kisi-Kisi</option>
-                                        <option value="SD / MI">SD / MI</option>
-                                        <option value="SMP / MTs">SMP / MTs</option>
-                                        <option value="SMA / SMK / MA">SMA / SMK / MA</option>
-                                        <option value="Perguruan Tinggi">Perguruan Tinggi</option>
-                                    </select>
+                                    <label class="block text-xs font-medium text-slate-700 mb-1">Kelas / Semester</label>
+                                    <input type="text" id="grade-input" placeholder="Contoh: III / I" class="w-full px-3.5 py-2 text-sm border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none">
                                 </div>
+                                <div>
+                                    <label class="block text-xs font-medium text-slate-700 mb-1">Alokasi Waktu</label>
+                                    <input type="text" id="time-input" placeholder="Contoh: 90 menit" class="w-full px-3.5 py-2 text-sm border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none">
+                                </div>
+                            </div>
+
+                            <div class="grid grid-cols-2 gap-3">
                                 <div>
                                     <label class="block text-xs font-medium text-slate-700 mb-1">Opsi Pilihan Ganda</label>
                                     <select id="options-count" class="w-full px-3 py-2 text-sm border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none bg-white">
-                                        <option value="4">4 Opsi (A - D)</option>
+                                        <option value="3">3 Opsi (A - C) - SD Rendah</option>
+                                        <option value="4" selected>4 Opsi (A - D)</option>
                                         <option value="5">5 Opsi (A - E)</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-medium text-slate-700 mb-1">Mode Pemrosesan</label>
+                                    <select id="batch-mode" class="w-full px-3 py-2 text-sm border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none bg-white">
+                                        <option value="auto" selected>Otomatis Presisi (Per Kelompok)</option>
+                                        <option value="single">Sekaligus Semua Baris</option>
                                     </select>
                                 </div>
                             </div>
 
                             <div>
                                 <label class="block text-xs font-medium text-slate-700 mb-1">Instruksi Tambahan (Opsional)</label>
-                                <textarea id="custom-instruction" rows="2" placeholder="Contoh: Gunakan stimulus cerita/studi kasus kontekstual pada setiap soal HOTS (C4-C6)..." class="w-full px-3.5 py-2 text-sm border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"></textarea>
+                                <textarea id="custom-instruction" rows="2" placeholder="Contoh: Gunakan bahasa yang ramah anak kelas 3 SD. Untuk indikator 'Disajikan gambar...', buat deskripsi visual gambar yang jelas." class="w-full px-3.5 py-2 text-sm border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"></textarea>
                             </div>
                         </div>
                     </div>
@@ -182,10 +215,10 @@
                     <div class="mt-6 pt-4 border-t border-slate-100">
                         <button id="generate-btn" onclick="generateAssessment()" class="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-slate-300 disabled:cursor-not-allowed text-white font-semibold py-3 px-4 rounded-xl shadow-sm transition flex items-center justify-center gap-2">
                             <i class="fa-solid fa-wand-magic-sparkles"></i>
-                            <span>Generate Soal Akurat Sekarang</span>
+                            <span>Generate Seluruh Soal Sesuai Kisi-Kisi</span>
                         </button>
                         <p class="text-[11px] text-center text-slate-400 mt-2">
-                            AI akan memetakan setiap baris indikator, level kognitif (Bloom), dan bentuk soal secara presisi.
+                            Mendukung pemisahan otomatis bagian PG, Isian Singkat, dan Uraian secara akurat.
                         </p>
                     </div>
                 </div>
@@ -193,10 +226,13 @@
         </div>
 
         <!-- Loading State -->
-        <div id="loading-section" class="hidden my-12 text-center py-12 bg-white rounded-2xl border border-slate-200 shadow-sm">
+        <div id="loading-section" class="hidden my-12 text-center py-12 bg-white rounded-2xl border border-slate-200 shadow-sm px-4">
             <div class="inline-block animate-spin rounded-full h-12 w-12 border-4 border-blue-600 border-t-transparent mb-4"></div>
-            <h3 class="text-lg font-bold text-slate-800">Menganalisis Kisi-Kisi & Menyusun Soal...</h3>
-            <p class="text-sm text-slate-500 max-w-md mx-auto mt-1">Sedang menyelaraskan indikator pencapaian kompetensi, level kognitif, stimulus soal, serta pengecoh (distractor) yang logis.</p>
+            <h3 id="loading-title" class="text-lg font-bold text-slate-800">Menganalisis Kisi-Kisi & Menyusun Soal...</h3>
+            <p id="loading-desc" class="text-sm text-slate-500 max-w-md mx-auto mt-1">Sedang memproses setiap butir indikator agar 100% selaras dengan Elemen, Tujuan Pembelajaran, dan Level Kognitif.</p>
+            <div class="max-w-md mx-auto mt-4 bg-slate-100 rounded-full h-2 overflow-hidden">
+                <div id="loading-progress" class="bg-blue-600 h-full transition-all duration-500" style="width: 15%"></div>
+            </div>
         </div>
 
         <!-- Langkah 2: Hasil Generate Soal -->
@@ -208,15 +244,15 @@
                     <div>
                         <h3 class="font-bold text-slate-900 text-lg flex items-center gap-2">
                             <i class="fa-solid fa-file-circle-check text-emerald-600"></i>
-                            Hasil Instrumen Asesmen
+                            Naskah Soal Asesmen Terbentuk
                         </h3>
-                        <p id="result-subtitle" class="text-xs text-slate-500">Berhasil menyusun soal sesuai indikator kisi-kisi</p>
+                        <p id="result-subtitle" class="text-xs text-slate-500">Berhasil menyusun seluruh soal sesuai indikator kisi-kisi</p>
                     </div>
 
                     <div class="flex flex-wrap items-center gap-2">
                         <button onclick="toggleAnswerKey()" id="toggle-key-btn" class="text-xs sm:text-sm bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-200 font-medium py-2 px-3 rounded-xl transition flex items-center gap-1.5">
                             <i class="fa-solid fa-eye"></i>
-                            <span>Sembunyikan Kunci & Pembahasan</span>
+                            <span>Sembunyikan Kunci</span>
                         </button>
                         <button onclick="copyAllQuestions()" class="text-xs sm:text-sm bg-white hover:bg-slate-100 text-slate-700 border border-slate-300 font-medium py-2 px-3 rounded-xl transition flex items-center gap-1.5">
                             <i class="fa-regular fa-copy"></i>
@@ -245,14 +281,15 @@
     <!-- Footer -->
     <footer class="bg-white border-t border-slate-200 py-5 mt-12 no-print">
         <div class="max-w-7xl mx-auto px-4 text-center text-xs text-slate-500">
-            AsesmenGen AI &bull; Dirancang untuk membantu pendidik menyusun evaluasi pembelajaran yang valid, reliabel, dan akurat sesuai kisi-kisi.
+            AsesmenGen AI &bull; Generator Asesmen Kurikulum Merdeka dengan Dukungan Merged-Cell Parser (.docx & .xlsx)
         </div>
     </footer>
 
     <script>
         // State Global Aplikasi
+        let parsedKisiRows = []; // Menyimpan array objek tiap baris kisi-kisi
         let extractedKisiContent = "";
-        let generatedQuestionsData = [];
+        let generatedQuestionsData = { judulAsesmen: "", daftarSoal: [] };
         let showAnswers = true;
 
         // Elemen DOM
@@ -298,6 +335,18 @@
             }, 4000);
         }
 
+        function toggleRawEditor() {
+            const rawEl = document.getElementById('extracted-text');
+            const btn = document.getElementById('toggle-raw-btn');
+            if (rawEl.classList.contains('hidden')) {
+                rawEl.classList.remove('hidden');
+                btn.textContent = 'Sembunyikan Teks Mentah';
+            } else {
+                rawEl.classList.add('hidden');
+                btn.textContent = 'Edit Teks Mentah';
+            }
+        }
+
         // Event Listeners Drag & Drop
         dropZone.addEventListener('click', () => fileInput.click());
         dropZone.addEventListener('dragover', (e) => {
@@ -329,7 +378,7 @@
             }
 
             fileNameEl.textContent = fileName;
-            fileMetaEl.textContent = `${(file.size / 1024).toFixed(1)} KB • Mengekstrak struktur kisi-kisi...`;
+            fileMetaEl.textContent = `${(file.size / 1024).toFixed(1)} KB • Mengekstrak tabel & sel gabungan...`;
             fileInfo.classList.remove('hidden');
 
             if (ext === 'docx') {
@@ -341,40 +390,188 @@
             }
         }
 
-        // Ekstraksi File Excel dengan SheetJS
+        // Helper Ekstraksi Metadata Kop (Mata Pelajaran, Kelas/Semester, Alokasi Waktu)
+        function extractMetadataFromMatrix(rowsMatrix) {
+            rowsMatrix.forEach(row => {
+                for (let i = 0; i < row.length; i++) {
+                    const cell = String(row[i] || "").trim();
+                    const lower = cell.toLowerCase();
+                    
+                    // Cari nilai setelah ':' atau pada sel sebelah
+                    const getNextVal = () => {
+                        if (cell.includes(':')) {
+                            const afterColon = cell.split(':').slice(1).join(':').trim();
+                            if (afterColon) return afterColon;
+                        }
+                        if (row[i + 1] === ':' && row[i + 2]) return String(row[i + 2]).trim();
+                        if (row[i + 1] && row[i + 1] !== ':') return String(row[i + 1]).replace(/^:\s*/, '').trim();
+                        return "";
+                    };
+
+                    if (lower.includes('mata pelajaran')) {
+                        const val = getNextVal();
+                        if (val) document.getElementById('subject-input').value = val;
+                    } else if (lower.includes('kelas') || lower.includes('semester')) {
+                        const val = getNextVal();
+                        if (val) document.getElementById('grade-input').value = val;
+                    } else if (lower.includes('alokasi waktu') || lower.includes('waktu')) {
+                        const val = getNextVal();
+                        if (val) document.getElementById('time-input').value = val;
+                    }
+                }
+            });
+        }
+
+        // Helper Pemetaan Matriks Baris ke Struktur 8 Kolom Kisi-Kisi
+        function normalizeKisiMatrix(matrix) {
+            extractMetadataFromMatrix(matrix);
+
+            // Cari baris header utama yang mengandung "Indikator Soal" atau "Bentuk Soal"
+            let headerRowIndex = -1;
+            let colMap = {
+                no: -1,
+                elemen: -1,
+                tp: -1,
+                materi: -1,
+                indikator: -1,
+                level: -1,
+                bentuk: -1,
+                nomorSoal: -1
+            };
+
+            for (let r = 0; r < matrix.length; r++) {
+                const rowLower = matrix[r].map(c => String(c || "").toLowerCase().trim());
+                if (rowLower.some(c => c.includes('indikator')) && rowLower.some(c => c.includes('bentuk') || c.includes('nomor soal') || c.includes('level'))) {
+                    headerRowIndex = r;
+                    rowLower.forEach((colName, idx) => {
+                        if (colName === 'no' || colName === 'no.') colMap.no = idx;
+                        else if (colName.includes('elemen') || colName.includes('kompetensi')) colMap.elemen = idx;
+                        else if (colName.includes('tujuan') || colName.includes('cp')) colMap.tp = idx;
+                        else if (colName.includes('materi')) colMap.materi = idx;
+                        else if (colName.includes('indikator')) colMap.indikator = idx;
+                        else if (colName.includes('level') || colName.includes('kognitif')) colMap.level = idx;
+                        else if (colName.includes('bentuk')) colMap.bentuk = idx;
+                        else if (colName.includes('nomor soal') || colName.includes('no soal') || colName.includes('no. soal')) colMap.nomorSoal = idx;
+                    });
+                    break;
+                }
+            }
+
+            // Fallback posisi kolom standar 8 kolom jika header tidak eksplisit
+            if (headerRowIndex === -1) {
+                headerRowIndex = 0;
+                colMap = { no: 0, elemen: 1, tp: 2, materi: 3, indikator: 4, level: 5, bentuk: 6, nomorSoal: 7 };
+            }
+
+            // Fill-down (Forward Fill) untuk kolom merged cells (Elemen, TP, Materi)
+            let lastElemen = "";
+            let lastTp = "";
+            let lastMateri = "";
+            const structuredItems = [];
+
+            for (let r = headerRowIndex + 1; r < matrix.length; r++) {
+                const row = matrix[r];
+                if (!row || row.every(c => String(c || "").trim() === "")) continue;
+
+                const indikatorVal = colMap.indikator >= 0 ? String(row[colMap.indikator] || "").trim() : "";
+                const nomorSoalRaw = colMap.nomorSoal >= 0 ? String(row[colMap.nomorSoal] || "").trim() : "";
+                const bentukRaw = colMap.bentuk >= 0 ? String(row[colMap.bentuk] || "").trim() : "";
+
+                // Lewati baris sub-header atau baris kosong tanpa indikator
+                if (!indikatorVal && !nomorSoalRaw) continue;
+
+                const curElemen = colMap.elemen >= 0 ? String(row[colMap.elemen] || "").trim() : "";
+                const curTp = colMap.tp >= 0 ? String(row[colMap.tp] || "").trim() : "";
+                const curMateri = colMap.materi >= 0 ? String(row[colMap.materi] || "").trim() : "";
+
+                if (curElemen) lastElemen = curElemen;
+                if (curTp) lastTp = curTp;
+                if (curMateri) lastMateri = curMateri;
+
+                const nomorSoal = nomorSoalRaw || String(structuredItems.length + 1);
+                const levelVal = colMap.level >= 0 ? String(row[colMap.level] || "").trim() : "";
+
+                structuredItems.push({
+                    nomorSoal: nomorSoal,
+                    elemen: lastElemen,
+                    tujuanPembelajaran: lastTp,
+                    materiPokok: lastMateri,
+                    indikatorSoal: indikatorVal,
+                    levelKognitif: levelVal || "L2",
+                    bentukSoal: bentukRaw || "PG"
+                });
+            }
+
+            return structuredItems;
+        }
+
+        // Render Pratinjau Tabel & String Kisi-Kisi
+        function finalizeParsedKisi(items, fileSizeKB) {
+            if (!items || items.length === 0) {
+                throw new Error("Tidak ditemukan baris indikator soal yang valid dalam dokumen.");
+            }
+
+            parsedKisiRows = items;
+            const tbody = document.getElementById('preview-table-body');
+            tbody.innerHTML = "";
+
+            let formattedTextLines = [];
+
+            items.forEach(item => {
+                // Render baris pratinjau UI
+                const tr = document.createElement('tr');
+                tr.className = "hover:bg-slate-50";
+                tr.innerHTML = `
+                    <td class="px-2.5 py-2 font-bold text-slate-800 whitespace-nowrap">${escapeHtml(item.nomorSoal)}</td>
+                    <td class="px-2.5 py-2 text-slate-600 max-w-[120px] truncate" title="${escapeHtml(item.elemen)}">${escapeHtml(item.elemen || '-')}</td>
+                    <td class="px-2.5 py-2 text-slate-600 max-w-[130px] truncate" title="${escapeHtml(item.materiPokok)}">${escapeHtml(item.materiPokok || '-')}</td>
+                    <td class="px-2.5 py-2 text-slate-800">${escapeHtml(item.indikatorSoal)}</td>
+                    <td class="px-2.5 py-2 text-center"><span class="bg-purple-50 text-purple-700 px-1.5 py-0.5 rounded font-medium">${escapeHtml(item.levelKognitif)}</span></td>
+                    <td class="px-2.5 py-2 text-center"><span class="bg-blue-50 text-blue-700 px-1.5 py-0.5 rounded font-medium">${escapeHtml(item.bentukSoal)}</span></td>
+                `;
+                tbody.appendChild(tr);
+
+                // Format string terstruktur untuk prompt AI
+                formattedTextLines.push(
+                    `No. Soal: ${item.nomorSoal} | Elemen: ${item.elemen} | TP: ${item.tujuanPembelajaran} | Materi: ${item.materiPokok} | Indikator: ${item.indikatorSoal} | Level: ${item.levelKognitif} | Bentuk: ${item.bentukSoal}`
+                );
+            });
+
+            extractedKisiContent = formattedTextLines.join("\n");
+            extractedTextEl.value = extractedKisiContent;
+            previewWrapper.classList.remove('hidden');
+            rowCountBadge.textContent = `${items.length} Butir Indikator Soal Terdeteksi`;
+            fileMetaEl.textContent = `${fileSizeKB} KB • Berhasil memetakan ${items.length} indikator soal`;
+            showToast(`Berhasil membaca ${items.length} indikator kisi-kisi dengan akurat!`, 'success');
+        }
+
+        // Ekstraksi File Excel dengan SheetJS (termasuk pengisian sel merged)
         async function parseExcelFile(file) {
             try {
                 const data = await file.arrayBuffer();
                 const workbook = XLSX.read(data, { type: 'array' });
-                let fullParsedText = "";
-                let totalRows = 0;
+                let allMatrix = [];
 
                 workbook.SheetNames.forEach(sheetName => {
                     const worksheet = workbook.Sheets[sheetName];
                     const jsonRows = XLSX.utils.sheet_to_json(worksheet, { header: 1, defval: "" });
                     
-                    // Filter baris yang tidak kosong melompong
-                    const validRows = jsonRows.filter(row => row.some(cell => String(cell).trim() !== ""));
-                    if (validRows.length > 0) {
-                        fullParsedText += `=== SHEET: ${sheetName} ===\n`;
-                        validRows.forEach((row, idx) => {
-                            const rowText = row.map(c => String(c).replace(/\n/g, ' ').trim()).join(' | ');
-                            fullParsedText += `Baris ${idx + 1}: ${rowText}\n`;
+                    // Terapkan nilai merged cells dari metadata !merges SheetJS jika ada
+                    if (worksheet['!merges']) {
+                        worksheet['!merges'].forEach(range => {
+                            const topVal = jsonRows[range.s.r]?.[range.s.c] || "";
+                            for (let r = range.s.r; r <= range.e.r; r++) {
+                                for (let c = range.s.c; c <= range.e.c; c++) {
+                                    if (jsonRows[r]) jsonRows[r][c] = topVal;
+                                }
+                            }
                         });
-                        totalRows += validRows.length;
                     }
+                    allMatrix = allMatrix.concat(jsonRows);
                 });
 
-                if (!fullParsedText.trim()) {
-                    throw new Error("File Excel kosong atau tidak memiliki teks.");
-                }
-
-                extractedKisiContent = fullParsedText;
-                extractedTextEl.value = fullParsedText;
-                previewWrapper.classList.remove('hidden');
-                rowCountBadge.textContent = `${totalRows} Baris Data Terdeteksi`;
-                fileMetaEl.textContent = `${(file.size / 1024).toFixed(1)} KB • Berhasil diekstrak`;
-                showToast('Kisi-kisi Excel berhasil dibaca!', 'success');
+                const structured = normalizeKisiMatrix(allMatrix);
+                finalizeParsedKisi(structured, (file.size / 1024).toFixed(1));
             } catch (err) {
                 console.error(err);
                 showToast('Gagal membaca file Excel: ' + err.message, 'error');
@@ -382,50 +579,66 @@
             }
         }
 
-        // Ekstraksi File Word (.docx) dengan Mammoth.js
+        // Ekstraksi File Word (.docx) dengan Pelacakan Rowspan/Colspan (Merged Cells)
         async function parseWordFile(file) {
             try {
                 const arrayBuffer = await file.arrayBuffer();
-                // Menggunakan convertToHtml agar struktur tabel <tr><td> tetap terjaga presisi
                 const result = await mammoth.convertToHtml({ arrayBuffer: arrayBuffer });
-                const htmlContent = result.value;
-
                 const parser = new DOMParser();
-                const doc = parser.parseFromString(htmlContent, 'text/html');
+                const doc = parser.parseFromString(result.value, 'text/html');
                 const tables = doc.querySelectorAll('table');
-                let structuredText = "";
-                let rowCounter = 0;
 
-                if (tables.length > 0) {
-                    tables.forEach((table, tIdx) => {
-                        structuredText += `=== TABEL KISI-KISI ${tIdx + 1} ===\n`;
-                        const rows = table.querySelectorAll('tr');
-                        rows.forEach((tr, rIdx) => {
-                            const cells = Array.from(tr.querySelectorAll('td, th')).map(td => td.textContent.replace(/\s+/g, ' ').trim());
-                            if (cells.some(c => c !== "")) {
-                                structuredText += `Baris ${rIdx + 1}: ${cells.join(' | ')}\n`;
-                                rowCounter++;
+                if (tables.length === 0) {
+                    throw new Error("Tidak ditemukan tabel kisi-kisi di dalam file Word.");
+                }
+
+                let combinedMatrix = [];
+
+                tables.forEach(table => {
+                    const rows = Array.from(table.querySelectorAll('tr'));
+                    const grid = [];
+                    const spanTracker = {}; // Melacak sel yang di-merge secara vertikal (rowspan)
+
+                    rows.forEach((tr, rIdx) => {
+                        grid[rIdx] = [];
+                        let cIdx = 0;
+                        const cells = Array.from(tr.querySelectorAll('td, th'));
+
+                        cells.forEach(cell => {
+                            // Lewati indeks kolom yang sedang ditempati rowspan dari baris atasnya
+                            while (spanTracker[`${rIdx},${cIdx}`] !== undefined) {
+                                grid[rIdx][cIdx] = spanTracker[`${rIdx},${cIdx}`];
+                                cIdx++;
                             }
+
+                            const text = cell.textContent.replace(/\s+/g, ' ').trim();
+                            const rowspan = parseInt(cell.getAttribute('rowspan') || '1', 10);
+                            const colspan = parseInt(cell.getAttribute('colspan') || '1', 10);
+
+                            for (let rs = 0; rs < rowspan; rs++) {
+                                for (let cs = 0; cs < colspan; cs++) {
+                                    if (rs === 0) {
+                                        grid[rIdx][cIdx + cs] = text;
+                                    } else {
+                                        spanTracker[`${rIdx + rs},${cIdx + cs}`] = text;
+                                    }
+                                }
+                            }
+                            cIdx += colspan;
                         });
-                        structuredText += "\n";
+
+                        // Isi sisa kolom trailing jika masih ada rowspan aktif di ujung kanan
+                        while (spanTracker[`${rIdx},${cIdx}`] !== undefined) {
+                            grid[rIdx][cIdx] = spanTracker[`${rIdx},${cIdx}`];
+                            cIdx++;
+                        }
                     });
-                } else {
-                    // Fallback jika kisi-kisi berbentuk paragraf biasa
-                    const rawResult = await mammoth.extractRawText({ arrayBuffer: arrayBuffer });
-                    structuredText = rawResult.value;
-                    rowCounter = structuredText.split('\n').filter(l => l.trim() !== '').length;
-                }
 
-                if (!structuredText.trim()) {
-                    throw new Error("Dokumen Word kosong.");
-                }
+                    combinedMatrix = combinedMatrix.concat(grid);
+                });
 
-                extractedKisiContent = structuredText;
-                extractedTextEl.value = structuredText;
-                previewWrapper.classList.remove('hidden');
-                rowCountBadge.textContent = `${rowCounter} Baris/Item Terdeteksi`;
-                fileMetaEl.textContent = `${(file.size / 1024).toFixed(1)} KB • Berhasil diekstrak`;
-                showToast('Kisi-kisi Word (.docx) berhasil dibaca!', 'success');
+                const structured = normalizeKisiMatrix(combinedMatrix);
+                finalizeParsedKisi(structured, (file.size / 1024).toFixed(1));
             } catch (err) {
                 console.error(err);
                 showToast('Gagal membaca file Word: ' + err.message, 'error');
@@ -435,27 +648,31 @@
 
         function resetFile() {
             fileInput.value = "";
+            parsedKisiRows = [];
             extractedKisiContent = "";
             extractedTextEl.value = "";
             fileInfo.classList.add('hidden');
             previewWrapper.classList.add('hidden');
         }
 
-        // Download Contoh Template Kisi-Kisi Excel
+        // Download Contoh Template Kisi-Kisi Excel (Format 8 Kolom Sesuai Lampiran)
         function downloadSampleExcel() {
             const sampleData = [
-                ["No Soal", "Kompetensi Dasar / CP", "Materi Pokok", "Indikator Soal", "Level Kognitif", "Bentuk Soal"],
-                [1, "Menganalisis interaksi makhluk hidup dengan lingkungannya", "Ekosistem & Rantai Makanan", "Disajikan ilustrasi gangguan pada salah satu populasi dalam ekosistem sawah, peserta didik dapat memprediksi dampak yang terjadi pada populasi lainnya.", "C4 (Menganalisis)", "Pilihan Ganda"],
-                [2, "Memahami konsep perubahan wujud benda dalam kehidupan sehari-hari", "Perubahan Wujud Zat", "Peserta didik dapat mengidentifikasi peristiwa menyublim berdasarkan contoh kegiatan sehari-hari.", "C2 (Memahami)", "Pilihan Ganda"],
-                [3, "Menerapkan konsep kalor dan perpindahannya", "Perpindahan Kalor", "Disajikan studi kasus penggunaan peralatan masak berbahan logam dan kayu, peserta didik dapat menjelaskan alasan pemilihan bahan tersebut berdasarkan sifat konduktivitas termal.", "C3 (Menerapkan)", "Uraian"]
+                ["KISI-KISI PENULISAN SOAL ASESMEN SUMATIF KURIKULUM MERDEKA", "", "", "", "", "", "", ""],
+                ["Kelas/Semester", ": III / I", "", "Alokasi Waktu", ": 90 menit", "", "", ""],
+                ["Mata Pelajaran", ": Pendidikan Pancasila", "", "Jumlah Soal", ": 3", "", "", ""],
+                ["No.", "Elemen", "Tujuan Pembelajaran", "Materi Pokok", "Indikator Soal", "Level Kognitif", "Bentuk Soal", "Nomor Soal"],
+                [1, "Bhinneka Tunggal Ika", "Menghargai identitas diri, teman, dan keluarga sesuai budaya, suku, bahasa, agama, dan kepercayaan.", "Aku, Keluarga, dan Temanku", "Disajikan pernyataan, peserta didik dapat mengidentifikasi sikap menghargai suku bangsa lain dengan tepat.", "L2", "PG", 1],
+                ["", "Bhinneka Tunggal Ika", "Menghargai identitas diri, teman, dan keluarga sesuai budaya, suku, bahasa, agama, dan kepercayaan.", "Aku, Keluarga, dan Temanku", "Disajikan pernyataan tentang nama salah satu rumah adat di Indonesia, peserta didik dapat menyebutkan asal daerah dari rumah adat tertentu.", "L1", "Isian", 2],
+                ["", "Bhinneka Tunggal Ika", "Menghargai identitas diri, teman, dan keluarga sesuai budaya, suku, bahasa, agama, dan kepercayaan.", "Aku, Keluarga, dan Temanku", "Peserta didik dapat menguraikan contoh jenis identitas yang digunakan untuk memperkenalkan diri.", "L3", "Uraian", 3]
             ];
 
             const ws = XLSX.utils.aoa_to_sheet(sampleData);
-            ws['!cols'] = [{wch: 8}, {wch: 35}, {wch: 25}, {wch: 55}, {wch: 18}, {wch: 16}];
+            ws['!cols'] = [{wch: 6}, {wch: 24}, {wch: 38}, {wch: 25}, {wch: 52}, {wch: 15}, {wch: 14}, {wch: 12}];
             const wb = XLSX.utils.book_new();
-            XLSX.utils.book_append_sheet(wb, ws, "Kisi-Kisi Soal");
-            XLSX.writeFile(wb, "Template_Kisi_Kisi_AsesmenGen.xlsx");
-            showToast('Template Excel contoh berhasil diunduh!', 'success');
+            XLSX.utils.book_append_sheet(wb, ws, "Kisi-Kisi");
+            XLSX.writeFile(wb, "Template_Kisi_Kisi_8_Kolom_Kurikulum_Merdeka.xlsx");
+            showToast('Template Excel 8 kolom berhasil diunduh!', 'success');
         }
 
         // Fungsi Fetch ke Gemini API dengan Exponential Backoff
@@ -483,123 +700,196 @@
             }
         }
 
-        // Proses Pembuatan Soal Menggunakan Gemini Structured Output
+        // Proses Pembuatan Soal Menggunakan Gemini Structured Output (Mendukung Chunking agar 40 soal tetap 100% akurat & tidak terpotong)
         async function generateAssessment() {
-            const currentKisi = extractedTextEl.value.trim();
-            if (!currentKisi) {
+            const rawLines = extractedTextEl.value.trim().split('\n').filter(l => l.trim() !== "");
+            if (rawLines.length === 0) {
                 showToast('Silakan unggah file kisi-kisi Word/Excel terlebih dahulu!', 'warning');
                 return;
             }
 
-            const subject = document.getElementById('subject-input').value.trim() || "Sesuai Kisi-Kisi";
-            const grade = document.getElementById('grade-input').value;
+            const subject = document.getElementById('subject-input').value.trim() || "Pendidikan Pancasila";
+            const grade = document.getElementById('grade-input').value.trim() || "Sesuai Kisi-Kisi";
             const optionsCount = document.getElementById('options-count').value;
             const customInstruction = document.getElementById('custom-instruction').value.trim();
+            const batchMode = document.getElementById('batch-mode').value;
 
             const generateBtn = document.getElementById('generate-btn');
             const loadingSection = document.getElementById('loading-section');
+            const loadingTitle = document.getElementById('loading-title');
+            const loadingDesc = document.getElementById('loading-desc');
+            const loadingProgress = document.getElementById('loading-progress');
             const resultSection = document.getElementById('result-section');
 
             generateBtn.disabled = true;
             loadingSection.classList.remove('hidden');
             resultSection.classList.add('hidden');
+            loadingProgress.style.width = "10%";
             loadingSection.scrollIntoView({ behavior: 'smooth', block: 'center' });
 
-            const systemPrompt = `Anda adalah Pakar Evaluasi Pendidikan dan Penyusun Soal Asesmen Profesional di Indonesia.
-Tugas Anda adalah membuat soal asesmen yang SANGAT AKURAT, VALID, dan 100% PRESISI mengikuti setiap baris pada dokumen kisi-kisi yang diberikan.
+            // Bagi baris menjadi batch (maksimal 15 soal per batch pada mode otomatis agar setiap soal detail & tidak terpotong)
+            const chunkSize = (batchMode === 'auto' && rawLines.length > 15) ? 15 : rawLines.length;
+            const chunks = [];
+            for (let i = 0; i < rawLines.length; i += chunkSize) {
+                chunks.push(rawLines.slice(i, i + chunkSize));
+            }
+
+            let allGeneratedQuestions = [];
+
+            const systemPrompt = `Anda adalah Pakar Evaluasi Pendidikan Kurikulum Merdeka dan Penyusun Soal Asesmen Profesional di Indonesia.
+Tugas Anda adalah menyusun soal asesmen yang SANGAT AKURAT, VALID, dan 100% PRESISI berdasarkan setiap baris kisi-kisi yang diberikan.
 
 ATURAN KETAT PENYUSUNAN SOAL:
-1. Baca setiap baris indikator soal, nomor soal, materi, level kognitif (Taksonomi Bloom C1-C6 / L1-L3), dan bentuk soal pada kisi-kisi.
-2. Jumlah dan urutan soal HARUS sesuai dengan jumlah item indikator soal pada kisi-kisi (abaikan baris header tabel).
-3. Jika indikator menyebutkan "Disajikan ilustrasi/kasus/data/wacana/kutipan...", Anda WAJIB membuat stimulus tersebut secara lengkap dan bermakna sebelum pertanyaan inti.
-4. Untuk soal Pilihan Ganda, buatlah tepat ${optionsCount} pilihan jawaban (A sampai ${optionsCount === '4' ? 'D' : 'E'}) dengan pengecoh (distractor) yang homogen, logis, dan tidak mengandung petunjuk jawaban yang mencolok.
-5. Untuk soal Uraian / Isian Singkat, kosongkan array 'options', dan berikan pedoman penskoran / jawaban lengkap pada field 'explanation'.
-6. Sertakan kunci jawaban yang benar dan pembahasan mendalam mengapa jawaban tersebut benar.`;
-
-            const userQuery = `Buatlah perangkat soal asesmen berdasarkan kisi-kisi berikut:
-- Mata Pelajaran: ${subject}
-- Jenjang/Kelas: ${grade}
-- Jumlah Opsi PG: ${optionsCount} opsi
-- Catatan Tambahan: ${customInstruction || "Tidak ada"}
-
-DATA KISI-KISI:
-${currentKisi}`;
-
-            const payload = {
-                contents: [{ parts: [{ text: userQuery }] }],
-                systemInstruction: { parts: [{ text: systemPrompt }] },
-                generationConfig: {
-                    responseMimeType: "application/json",
-                    responseSchema: {
-                        type: "OBJECT",
-                        properties: {
-                            judulAsesmen: { type: "STRING", description: "Judul instrumen asesmen yang sesuai" },
-                            daftarSoal: {
-                                type: "ARRAY",
-                                items: {
-                                    type: "OBJECT",
-                                    properties: {
-                                        nomorSoal: { type: "INTEGER" },
-                                        bentukSoal: { type: "STRING", description: "Contoh: Pilihan Ganda, Uraian, Isian Singkat" },
-                                        levelKognitif: { type: "STRING", description: "Contoh: C4 (Menganalisis)" },
-                                        indikatorTerkait: { type: "STRING", description: "Ringkasan indikator dari kisi-kisi yang diukur" },
-                                        stimulus: { type: "STRING", description: "Teks bacaan, studi kasus, data tabel teks, atau ilustrasi jika diperlukan indikator (kosongkan jika tidak perlu)" },
-                                        pertanyaan: { type: "STRING", description: "Kalimat pokok soal / pertanyaan" },
-                                        pilihanJawaban: {
-                                            type: "ARRAY",
-                                            items: {
-                                                type: "OBJECT",
-                                                properties: {
-                                                    huruf: { type: "STRING" },
-                                                    teks: { type: "STRING" }
-                                                }
-                                            }
-                                        },
-                                        kunciJawaban: { type: "STRING", description: "Huruf kunci jawaban (untuk PG) atau poin jawaban singkat (untuk Uraian)" },
-                                        pembahasan: { type: "STRING", description: "Penjelasan rasional kunci jawaban atau rubrik penskoran uraian" }
-                                    },
-                                    required: ["nomorSoal", "bentukSoal", "levelKognitif", "indikatorTerkait", "pertanyaan", "kunciJawaban", "pembahasan"]
-                                }
-                            }
-                        },
-                        required: ["judulAsesmen", "daftarSoal"]
-                    }
-                }
-            };
+1. Buat tepat 1 butir soal untuk SETIAP baris kisi-kisi yang diberikan. Gunakan Nomor Soal yang tertera pada baris kisi-kisi tersebut.
+2. Selaraskan tingkat bahasa dan konteks soal dengan Jenjang/Kelas (${grade}) dan Mata Pelajaran (${subject}).
+3. Jika indikator menyebutkan:
+   - "Disajikan pernyataan / ilustrasi / teks singkat..." -> WAJIB isi field 'stimulus' dengan pernyataan/ilustrasi tersebut.
+   - "Disajikan dialog..." -> WAJIB isi field 'stimulus' dengan dialog singkat antar tokoh yang relevan.
+   - "Disajikan gambar..." -> WAJIB isi field 'stimulus' dengan deskripsi ilustrasi gambar secara jelas diawali label "[Ilustrasi Gambar: ...]".
+4. Sesuaikan bentuk soal dengan kolom Bentuk Soal:
+   - Jika "PG" atau "Pilihan Ganda": isi 'pilihanJawaban' dengan tepat ${optionsCount} opsi (A sampai ${optionsCount === '3' ? 'C' : optionsCount === '4' ? 'D' : 'E'}). Kunci jawaban berupa huruf kapital (misal: "A").
+   - Jika "Isian" atau "Isian Singkat": kosongkan array 'pilihanJawaban' ([]), buat kalimat soal dengan titik-titik isian (....) atau pertanyaan singkat, dan berikan jawaban singkat yang tepat pada 'kunciJawaban'.
+   - Jika "Uraian": kosongkan array 'pilihanJawaban' ([]), buat pertanyaan uraian sesuai level kognitif (misal menyebutkan 3 contoh/fungsi jika diminta indikator), dan tuliskan jawaban lengkap beserta pedoman penskoran pada 'kunciJawaban' dan 'pembahasan'.`;
 
             try {
-                const result = await fetchGeminiWithBackoff(payload);
-                const rawJsonText = result?.candidates?.[0]?.content?.parts?.[0]?.text;
-                if (!rawJsonText) {
-                    throw new Error("Respons AI kosong atau tidak valid.");
+                for (let cIdx = 0; cIdx < chunks.length; cIdx++) {
+                    const currentChunk = chunks[cIdx];
+                    const progressPct = Math.round(((cIdx + 0.5) / chunks.length) * 90);
+                    loadingProgress.style.width = `${progressPct}%`;
+                    loadingTitle.textContent = chunks.length > 1 
+                        ? `Menyusun Soal Tahap ${cIdx + 1} dari ${chunks.length}...` 
+                        : `Menyusun ${rawLines.length} Butir Soal Presisi...`;
+                    loadingDesc.textContent = `Memproses indikator baris ${cIdx * chunkSize + 1} s.d. ${cIdx * chunkSize + currentChunk.length}...`;
+
+                    const userQuery = `Susunlah soal asesmen untuk daftar kisi-kisi berikut:
+Mata Pelajaran: ${subject}
+Kelas/Semester: ${grade}
+Jumlah Opsi PG: ${optionsCount} opsi
+Catatan Tambahan: ${customInstruction || "Sesuaikan dengan standar Kurikulum Merdeka."}
+
+DAFTAR KISI-KISI:
+${currentChunk.join('\n')}`;
+
+                    const payload = {
+                        contents: [{ parts: [{ text: userQuery }] }],
+                        systemInstruction: { parts: [{ text: systemPrompt }] },
+                        generationConfig: {
+                            responseMimeType: "application/json",
+                            responseSchema: {
+                                type: "OBJECT",
+                                properties: {
+                                    daftarSoal: {
+                                        type: "ARRAY",
+                                        items: {
+                                            type: "OBJECT",
+                                            properties: {
+                                                nomorSoal: { type: "INTEGER" },
+                                                elemen: { type: "STRING" },
+                                                materiPokok: { type: "STRING" },
+                                                bentukSoal: { type: "STRING", description: "PG, Isian, atau Uraian" },
+                                                levelKognitif: { type: "STRING", description: "L1, L2, L3, atau L4" },
+                                                indikatorTerkait: { type: "STRING" },
+                                                stimulus: { type: "STRING", description: "Pernyataan, dialog, ilustrasi, atau deskripsi gambar jika diminta indikator (kosongkan jika tidak perlu)" },
+                                                pertanyaan: { type: "STRING" },
+                                                pilihanJawaban: {
+                                                    type: "ARRAY",
+                                                    items: {
+                                                        type: "OBJECT",
+                                                        properties: {
+                                                            huruf: { type: "STRING" },
+                                                            teks: { type: "STRING" }
+                                                        }
+                                                    }
+                                                },
+                                                kunciJawaban: { type: "STRING" },
+                                                pembahasan: { type: "STRING" }
+                                            },
+                                            required: ["nomorSoal", "bentukSoal", "levelKognitif", "indikatorTerkait", "pertanyaan", "kunciJawaban", "pembahasan"]
+                                        }
+                                    }
+                                },
+                                required: ["daftarSoal"]
+                            }
+                        }
+                    };
+
+                    const result = await fetchGeminiWithBackoff(payload);
+                    const rawJsonText = result?.candidates?.[0]?.content?.parts?.[0]?.text;
+                    if (!rawJsonText) {
+                        throw new Error(`Respons AI kosong pada tahap ${cIdx + 1}.`);
+                    }
+
+                    const parsedChunk = JSON.parse(rawJsonText);
+                    if (parsedChunk.daftarSoal && Array.isArray(parsedChunk.daftarSoal)) {
+                        allGeneratedQuestions = allGeneratedQuestions.concat(parsedChunk.daftarSoal);
+                    }
                 }
 
-                const parsed = JSON.parse(rawJsonText);
-                generatedQuestionsData = parsed;
-                renderQuestions(parsed);
-                
+                loadingProgress.style.width = "100%";
+                allGeneratedQuestions.sort((a, b) => a.nomorSoal - b.nomorSoal);
+
+                generatedQuestionsData = {
+                    judulAsesmen: `Asesmen Sumatif ${subject} (${grade})`,
+                    daftarSoal: allGeneratedQuestions
+                };
+
+                renderQuestions(generatedQuestionsData);
                 resultSection.classList.remove('hidden');
                 resultSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                showToast(`Berhasil menghasilkan ${parsed.daftarSoal.length} soal akurat!`, 'success');
+                showToast(`Selesai! ${allGeneratedQuestions.length} soal akurat berhasil disusun.`, 'success');
             } catch (error) {
                 console.error("Generation Error:", error);
-                showToast('Terjadi kesalahan saat menyusun soal. Silakan coba lagi.', 'error');
+                showToast('Terjadi kesalahan saat menyusun soal: ' + error.message, 'error');
             } finally {
                 generateBtn.disabled = false;
                 loadingSection.classList.add('hidden');
             }
         }
 
-        // Render Daftar Soal ke Antarmuka
+        // Helper Klasifikasi Bentuk Soal (PG, Isian, Uraian)
+        function classifyBentuk(bentukStr) {
+            const b = String(bentukStr || "").toLowerCase();
+            if (b.includes('pg') || b.includes('pilihan')) return 'PG';
+            if (b.includes('isian')) return 'ISIAN';
+            return 'URAIAN';
+        }
+
+        // Render Daftar Soal ke Antarmuka (Dikelompokkan per Bagian I. PG, II. Isian, III. Uraian)
         function renderQuestions(data) {
             const container = document.getElementById('questions-container');
             const subtitle = document.getElementById('result-subtitle');
             subtitle.textContent = `${data.judulAsesmen} • Total ${data.daftarSoal.length} Butir Soal`;
 
             container.innerHTML = "";
+            let currentGroup = "";
 
             data.daftarSoal.forEach((item, index) => {
-                const isPG = item.pilihanJawaban && item.pilihanJawaban.length > 0;
+                const groupType = classifyBentuk(item.bentukSoal);
+                
+                // Tambahkan Header Pemisah Bagian Soal (Romawi I, II, III)
+                if (groupType !== currentGroup) {
+                    currentGroup = groupType;
+                    const groupBanner = document.createElement('div');
+                    groupBanner.className = "pt-4 pb-2 border-b-2 border-slate-800 flex items-center justify-between";
+                    let titleText = "I. PILIHAN GANDA";
+                    let descText = "Pilihlah salah satu jawaban yang paling tepat!";
+                    if (groupType === 'ISIAN') {
+                        titleText = "II. ISIAN SINGKAT";
+                        descText = "Isilah titik-titik di bawah ini dengan jawaban yang singkat dan tepat!";
+                    } else if (groupType === 'URAIAN') {
+                        titleText = "III. URAIAN";
+                        descText = "Jawablah pertanyaan-pertanyaan di bawah ini dengan jelas dan lengkap!";
+                    }
+                    groupBanner.innerHTML = `
+                        <div>
+                            <h4 class="font-bold text-slate-900 text-base">${titleText}</h4>
+                            <p class="text-xs text-slate-500 italic">${descText}</p>
+                        </div>
+                    `;
+                    container.appendChild(groupBanner);
+                }
+
+                const isPG = groupType === 'PG' && item.pilihanJawaban && item.pilihanJawaban.length > 0;
                 
                 let optionsHtml = "";
                 if (isPG) {
@@ -616,20 +906,21 @@ ${currentKisi}`;
                     </div>`;
                 }
 
+                const isVisualStimulus = item.stimulus && item.stimulus.toLowerCase().includes('ilustrasi gambar');
                 const stimulusHtml = item.stimulus && item.stimulus.trim() !== "" ? `
-                    <div class="mb-3 p-3.5 bg-slate-50 border-l-4 border-blue-500 rounded-r-xl text-sm text-slate-700 leading-relaxed whitespace-pre-line">
-                        ${escapeHtml(item.stimulus)}
+                    <div class="mb-3 p-3.5 ${isVisualStimulus ? 'bg-amber-50/70 border-l-4 border-amber-500 text-amber-950' : 'bg-slate-50 border-l-4 border-blue-500 text-slate-700'} rounded-r-xl text-sm leading-relaxed whitespace-pre-line">
+                        ${isVisualStimulus ? '<i class="fa-regular fa-image mr-1.5 text-amber-600"></i>' : ''}${escapeHtml(item.stimulus)}
                     </div>
                 ` : "";
 
                 const answerBoxHtml = `
-                    <div class="answer-box mt-4 pt-3 border-t border-dashed border-slate-200 ${showAnswers ? '' : 'hidden'} no-print-hide">
+                    <div class="answer-box mt-4 pt-3 border-t border-dashed border-slate-200 ${showAnswers ? '' : 'hidden'} no-print">
                         <div class="bg-emerald-50/60 border border-emerald-200/80 rounded-xl p-3.5 text-xs sm:text-sm">
                             <div class="flex items-center gap-2 font-bold text-emerald-800 mb-1">
                                 <i class="fa-solid fa-key"></i>
                                 <span>Kunci Jawaban: ${escapeHtml(item.kunciJawaban)}</span>
                             </div>
-                            <p class="text-slate-700 leading-relaxed"><span class="font-semibold">Pembahasan:</span> ${escapeHtml(item.pembahasan)}</p>
+                            <p class="text-slate-700 leading-relaxed"><span class="font-semibold">Pembahasan / Pedoman Penskoran:</span> ${escapeHtml(item.pembahasan)}</p>
                         </div>
                     </div>
                 `;
@@ -640,9 +931,10 @@ ${currentKisi}`;
                     <!-- Metadata Kisi-Kisi Badge -->
                     <div class="flex flex-wrap items-center justify-between gap-2 pb-3 mb-3 border-b border-slate-100 no-print">
                         <div class="flex flex-wrap items-center gap-2">
-                            <span class="bg-blue-600 text-white text-xs font-bold px-2.5 py-1 rounded-lg">Soal No. ${item.nomorSoal}</span>
+                            <span class="bg-blue-600 text-white text-xs font-bold px-2.5 py-1 rounded-lg">No. ${item.nomorSoal}</span>
                             <span class="bg-purple-50 text-purple-700 border border-purple-200 text-xs font-medium px-2.5 py-0.5 rounded-lg">${escapeHtml(item.levelKognitif)}</span>
-                            <span class="bg-slate-100 text-slate-600 text-xs font-medium px-2.5 py-0.5 rounded-lg">${escapeHtml(item.bentukSoal)}</span>
+                            <span class="bg-slate-100 text-slate-700 text-xs font-medium px-2.5 py-0.5 rounded-lg">${escapeHtml(item.bentukSoal)}</span>
+                            ${item.elemen ? `<span class="bg-indigo-50 text-indigo-700 text-xs font-medium px-2.5 py-0.5 rounded-lg">${escapeHtml(item.elemen)}</span>` : ''}
                         </div>
                         <button onclick="regenerateSingleQuestion(${index})" class="text-xs text-slate-500 hover:text-blue-600 flex items-center gap-1 px-2 py-1 rounded-lg hover:bg-blue-50 transition" title="Buat ulang khusus nomor ini">
                             <i class="fa-solid fa-rotate-right"></i> Buat Ulang
@@ -651,7 +943,7 @@ ${currentKisi}`;
 
                     <!-- Indikator Acuan -->
                     <div class="mb-3 text-xs text-slate-500 bg-slate-50 px-3 py-1.5 rounded-lg border border-slate-100 no-print">
-                        <span class="font-semibold text-slate-600">Indikator Kisi-Kisi:</span> ${escapeHtml(item.indikatorTerkait)}
+                        <span class="font-semibold text-slate-600">Indikator:</span> ${escapeHtml(item.indikatorTerkait)}
                     </div>
 
                     <!-- Konten Soal -->
@@ -675,8 +967,13 @@ ${currentKisi}`;
             showToast(`Menyusun ulang Soal No. ${targetItem.nomorSoal}...`, 'info');
 
             const optionsCount = document.getElementById('options-count').value;
+            const grade = document.getElementById('grade-input').value.trim() || "Sesuai Kisi-Kisi";
+            const subject = document.getElementById('subject-input').value.trim() || "Pendidikan Pancasila";
+
             const prompt = `Buat ulang 1 butir soal pengganti yang berbeda namun tetap 100% akurat mengukur indikator berikut:
+Mata Pelajaran: ${subject} | Kelas: ${grade}
 Nomor Soal: ${targetItem.nomorSoal}
+Elemen: ${targetItem.elemen || "-"}
 Bentuk Soal: ${targetItem.bentukSoal}
 Level Kognitif: ${targetItem.levelKognitif}
 Indikator: ${targetItem.indikatorTerkait}
@@ -690,6 +987,7 @@ Jumlah Opsi PG (jika PG): ${optionsCount}`;
                         type: "OBJECT",
                         properties: {
                             nomorSoal: { type: "INTEGER" },
+                            elemen: { type: "STRING" },
                             bentukSoal: { type: "STRING" },
                             levelKognitif: { type: "STRING" },
                             indikatorTerkait: { type: "STRING" },
@@ -717,6 +1015,7 @@ Jumlah Opsi PG (jika PG): ${optionsCount}`;
                 const res = await fetchGeminiWithBackoff(payload);
                 const newQuestion = JSON.parse(res.candidates[0].content.parts[0].text);
                 newQuestion.nomorSoal = targetItem.nomorSoal;
+                newQuestion.elemen = targetItem.elemen;
                 generatedQuestionsData.daftarSoal[index] = newQuestion;
                 renderQuestions(generatedQuestionsData);
                 showToast(`Soal No. ${targetItem.nomorSoal} berhasil diperbarui!`, 'success');
@@ -730,8 +1029,8 @@ Jumlah Opsi PG (jika PG): ${optionsCount}`;
             showAnswers = !showAnswers;
             const btn = document.getElementById('toggle-key-btn');
             btn.innerHTML = showAnswers 
-                ? `<i class="fa-solid fa-eye"></i><span>Sembunyikan Kunci & Pembahasan</span>`
-                : `<i class="fa-solid fa-eye-slash"></i><span>Tampilkan Kunci & Pembahasan</span>`;
+                ? `<i class="fa-solid fa-eye"></i><span>Sembunyikan Kunci</span>`
+                : `<i class="fa-solid fa-eye-slash"></i><span>Tampilkan Kunci</span>`;
             renderQuestions(generatedQuestionsData);
         }
 
@@ -740,7 +1039,17 @@ Jumlah Opsi PG (jika PG): ${optionsCount}`;
             if (!generatedQuestionsData.daftarSoal) return;
 
             let textOutput = `${generatedQuestionsData.judulAsesmen.toUpperCase()}\n\n`;
+            let currentGroup = "";
+
             generatedQuestionsData.daftarSoal.forEach(q => {
+                const gType = classifyBentuk(q.bentukSoal);
+                if (gType !== currentGroup) {
+                    currentGroup = gType;
+                    if (gType === 'PG') textOutput += `I. PILIHAN GANDA\n`;
+                    else if (gType === 'ISIAN') textOutput += `\nII. ISIAN SINGKAT\n`;
+                    else textOutput += `\nIII. URAIAN\n`;
+                }
+
                 textOutput += `${q.nomorSoal}. `;
                 if (q.stimulus) textOutput += `${q.stimulus}\n`;
                 textOutput += `${q.pertanyaan}\n`;
@@ -768,34 +1077,69 @@ Jumlah Opsi PG (jika PG): ${optionsCount}`;
             document.body.removeChild(textArea);
         }
 
-        // Ekspor Hasil ke Dokumen Microsoft Word (.doc)
+        // Ekspor Hasil ke Dokumen Microsoft Word (.doc) Lengkap dengan Kop Ujian & Bagian Soal
         function exportToWord() {
             if (!generatedQuestionsData.daftarSoal) return;
 
+            const subject = document.getElementById('subject-input').value.trim() || "Pendidikan Pancasila";
+            const grade = document.getElementById('grade-input').value.trim() || "III / I";
+            const timeAlloc = document.getElementById('time-input').value.trim() || "90 menit";
+
             let htmlContent = `
                 <html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'>
-                <head><meta charset='utf-8'><title>${generatedQuestionsData.judulAsesmen}</title>
+                <head><meta charset='utf-8'><title>${escapeHtml(generatedQuestionsData.judulAsesmen)}</title>
                 <style>
-                    body { font-family: 'Times New Roman', serif; font-size: 12pt; line-height: 1.5; }
-                    h2 { text-align: center; text-transform: uppercase; margin-bottom: 20px; }
-                    .soal-block { margin-bottom: 16px; }
-                    .stimulus { background-color: #f4f4f4; padding: 8px; border-left: 3px solid #333; margin-bottom: 6px; }
-                    .opsi { margin-left: 24px; }
-                    .kunci-section { page-break-before: always; margin-top: 30px; }
-                    table { width: 100%; border-collapse: collapse; margin-top: 10px; }
-                    th, td { border: 1px solid #000; padding: 6px; text-align: left; font-size: 10.5pt; }
+                    body { font-family: 'Times New Roman', serif; font-size: 12pt; line-height: 1.45; }
+                    h2 { text-align: center; text-transform: uppercase; margin-bottom: 12px; font-size: 14pt; }
+                    .kop-table { width: 100%; border-collapse: collapse; margin-bottom: 18px; border: 1px solid #000; }
+                    .kop-table td { border: 1px solid #000; padding: 5px 8px; font-size: 11pt; }
+                    .bagian-title { font-weight: bold; margin-top: 16px; margin-bottom: 8px; text-transform: uppercase; }
+                    .soal-block { margin-bottom: 14px; }
+                    .stimulus { background-color: #f9f9f9; padding: 6px 10px; border-left: 3px solid #444; margin-bottom: 5px; font-style: italic; }
+                    .opsi { margin-left: 22px; }
+                    .kunci-section { page-break-before: always; margin-top: 25px; }
+                    .kunci-table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+                    .kunci-table th, .kunci-table td { border: 1px solid #000; padding: 5px; text-align: left; font-size: 10.5pt; }
                 </style>
                 </head><body>
-                <h2>${escapeHtml(generatedQuestionsData.judulAsesmen)}</h2>
+                <h2>ASESMEN SUMATIF AKHIR SEMESTER KURIKULUM MERDEKA</h2>
+                <table class="kop-table">
+                    <tr>
+                        <td style="width: 22%;"><strong>Mata Pelajaran</strong></td>
+                        <td style="width: 33%;">: ${escapeHtml(subject)}</td>
+                        <td style="width: 20%;"><strong>Nama Siswa</strong></td>
+                        <td style="width: 25%;">: ....................................</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Kelas / Semester</strong></td>
+                        <td>: ${escapeHtml(grade)}</td>
+                        <td><strong>Nomor Absen</strong></td>
+                        <td>: ....................................</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Alokasi Waktu</strong></td>
+                        <td>: ${escapeHtml(timeAlloc)}</td>
+                        <td><strong>Nilai</strong></td>
+                        <td>: ....................................</td>
+                    </tr>
+                </table>
             `;
 
-            // Bagian Naskah Soal
+            let currentGroup = "";
             generatedQuestionsData.daftarSoal.forEach(q => {
+                const gType = classifyBentuk(q.bentukSoal);
+                if (gType !== currentGroup) {
+                    currentGroup = gType;
+                    if (gType === 'PG') htmlContent += `<div class="bagian-title">I. Berilah tanda silang (X) pada huruf jawaban yang paling benar!</div>`;
+                    else if (gType === 'ISIAN') htmlContent += `<div class="bagian-title">II. Isilah titik-titik di bawah ini dengan jawaban yang tepat!</div>`;
+                    else htmlContent += `<div class="bagian-title">III. Jawablah pertanyaan-pertanyaan berikut dengan uraian yang jelas!</div>`;
+                }
+
                 htmlContent += `<div class="soal-block">`;
                 if (q.stimulus) {
                     htmlContent += `<div class="stimulus">${escapeHtml(q.stimulus).replace(/\n/g, '<br>')}</div>`;
                 }
-                htmlContent += `<p><strong>${q.nomorSoal}.</strong> ${escapeHtml(q.pertanyaan).replace(/\n/g, '<br>')}</p>`;
+                htmlContent += `<div><strong>${q.nomorSoal}.</strong> ${escapeHtml(q.pertanyaan).replace(/\n/g, '<br>')}</div>`;
                 if (q.pilihanJawaban && q.pilihanJawaban.length > 0) {
                     q.pilihanJawaban.forEach(opt => {
                         htmlContent += `<div class="opsi">${opt.huruf}. ${escapeHtml(opt.teks)}</div>`;
@@ -807,13 +1151,13 @@ Jumlah Opsi PG (jika PG): ${optionsCount}`;
             // Bagian Kunci Jawaban & Pembahasan di Halaman Baru
             htmlContent += `
                 <div class="kunci-section">
-                    <h3>KUNCI JAWABAN, PEMBAHASAN & PEMETAAN KISI-KISI</h3>
-                    <table>
+                    <h3>KUNCI JAWABAN, LEVEL KOGNITIF & PEDOMAN PENSKORAN</h3>
+                    <table class="kunci-table">
                         <thead>
                             <tr>
-                                <th style="width: 8%;">No</th>
-                                <th style="width: 15%;">Level / Bentuk</th>
-                                <th style="width: 15%;">Kunci</th>
+                                <th style="width: 7%;">No</th>
+                                <th style="width: 15%;">Bentuk / Level</th>
+                                <th style="width: 23%;">Kunci Jawaban</th>
                                 <th>Pembahasan & Pedoman Penskoran</th>
                             </tr>
                         </thead>
@@ -824,7 +1168,7 @@ Jumlah Opsi PG (jika PG): ${optionsCount}`;
                 htmlContent += `
                     <tr>
                         <td>${q.nomorSoal}</td>
-                        <td>${escapeHtml(q.levelKognitif)}<br>(${escapeHtml(q.bentukSoal)})</td>
+                        <td>${escapeHtml(q.bentukSoal)} (${escapeHtml(q.levelKognitif)})</td>
                         <td><strong>${escapeHtml(q.kunciJawaban)}</strong></td>
                         <td>${escapeHtml(q.pembahasan)}</td>
                     </tr>
@@ -837,12 +1181,12 @@ Jumlah Opsi PG (jika PG): ${optionsCount}`;
             const url = URL.createObjectURL(blob);
             const link = document.createElement('a');
             link.href = url;
-            link.download = `Naskah_Soal_${generatedQuestionsData.judulAsesmen.replace(/[^a-zA-Z0-9]/g, '_')}.doc`;
+            link.download = `Naskah_Soal_${subject.replace(/[^a-zA-Z0-9]/g, '_')}.doc`;
             document.body.appendChild(link);
             link.click();
             document.body.removeChild(link);
             URL.revokeObjectURL(url);
-            showToast('File Word (.doc) siap digunakan!', 'success');
+            showToast('Dokumen Word (.doc) lengkap dengan kop soal siap diunduh!', 'success');
         }
 
         // Helper Sanitasi HTML
