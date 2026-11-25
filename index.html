@@ -1,0 +1,860 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AsesmenGen AI - Pembuat Soal Akurat dari Kisi-Kisi</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts: Inter -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Font Awesome untuk Ikon -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- SheetJS untuk membaca file Excel (.xlsx, .xls, .csv) -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <!-- Mammoth.js untuk membaca file Word (.docx) -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js"></script>
+
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f8fafc;
+        }
+        .drop-zone {
+            transition: all 0.2s ease-in-out;
+        }
+        .drop-zone.dragover {
+            border-color: #3b82f6;
+            background-color: #eff6ff;
+            transform: scale(1.01);
+        }
+        /* Custom scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #f1f5f9;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8;
+        }
+        @media print {
+            .no-print {
+                display: none !important;
+            }
+            body {
+                background-color: white;
+            }
+            .print-container {
+                box-shadow: none !important;
+                border: none !important;
+                padding: 0 !important;
+            }
+        }
+    </style>
+</head>
+<body class="text-slate-800 min-h-screen flex flex-col">
+
+    <!-- Navbar -->
+    <header class="bg-white border-b border-slate-200 sticky top-0 z-30 no-print">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+            <div class="flex items-center space-x-3">
+                <div class="bg-blue-600 text-white p-2 rounded-xl shadow-sm">
+                    <i class="fa-solid fa-graduation-cap text-xl"></i>
+                </div>
+                <div>
+                    <h1 class="font-bold text-lg text-slate-900 leading-tight">AsesmenGen <span class="text-blue-600">AI</span></h1>
+                    <p class="text-xs text-slate-500">Generator Soal Presisi Berbasis Kisi-Kisi</p>
+                </div>
+            </div>
+            <div class="flex items-center space-x-2">
+                <button onclick="downloadSampleExcel()" class="text-xs sm:text-sm bg-slate-100 hover:bg-slate-200 text-slate-700 font-medium py-2 px-3 rounded-lg transition flex items-center gap-2">
+                    <i class="fa-solid fa-download text-blue-600"></i>
+                    <span class="hidden sm:inline">Contoh Template Excel</span>
+                    <span class="sm:hidden">Template</span>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Notifikasi Toast / Message Box (Pengganti alert) -->
+    <div id="toast-container" class="fixed bottom-5 right-5 z-50 flex flex-col gap-2 max-w-sm w-full pointer-events-none px-4 sm:px-0"></div>
+
+    <!-- Main Content -->
+    <main class="flex-grow max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        
+        <!-- Langkah 1: Upload & Pengaturan -->
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 no-print">
+            
+            <!-- Kolom Kiri: Area Upload Kisi-Kisi -->
+            <div class="lg:col-span-7 flex flex-col gap-6">
+                <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
+                    <div class="flex items-center justify-between mb-4">
+                        <h2 class="text-base font-semibold text-slate-900 flex items-center gap-2">
+                            <span class="bg-blue-100 text-blue-700 w-6 h-6 rounded-full inline-flex items-center justify-center text-xs font-bold">1</span>
+                            Unggah Dokumen Kisi-Kisi
+                        </h2>
+                        <span class="text-xs font-medium text-slate-500 bg-slate-100 px-2.5 py-1 rounded-full">.XLSX, .XLS, .CSV, .DOCX</span>
+                    </div>
+
+                    <!-- Drop Zone -->
+                    <div id="drop-zone" class="drop-zone border-2 border-dashed border-slate-300 rounded-xl p-8 text-center cursor-pointer hover:border-blue-500 hover:bg-slate-50/50 relative">
+                        <input type="file" id="file-input" class="hidden" accept=".xlsx,.xls,.csv,.docx">
+                        <div class="w-14 h-14 bg-blue-50 text-blue-600 rounded-full flex items-center justify-center mx-auto mb-3">
+                            <i class="fa-solid fa-cloud-arrow-up text-2xl"></i>
+                        </div>
+                        <p class="text-sm font-medium text-slate-700 mb-1">Klik untuk memilih file atau seret & lepas di sini</p>
+                        <p class="text-xs text-slate-400">Mendukung tabel kisi-kisi dalam format Microsoft Word (.docx) atau Excel (.xlsx)</p>
+                    </div>
+
+                    <!-- Info File Terunggah -->
+                    <div id="file-info" class="hidden mt-4 p-3.5 bg-blue-50/70 border border-blue-200 rounded-xl flex items-center justify-between">
+                        <div class="flex items-center gap-3 overflow-hidden">
+                            <i id="file-icon" class="fa-solid fa-file-excel text-emerald-600 text-2xl flex-shrink-0"></i>
+                            <div class="truncate">
+                                <p id="file-name" class="text-sm font-semibold text-slate-800 truncate">kisi-kisi.xlsx</p>
+                                <p id="file-meta" class="text-xs text-slate-500">Siap diproses</p>
+                            </div>
+                        </div>
+                        <button onclick="resetFile()" class="text-slate-400 hover:text-red-500 p-2 rounded-lg transition" title="Hapus file">
+                            <i class="fa-solid fa-trash-can"></i>
+                        </button>
+                    </div>
+
+                    <!-- Pratinjau Isi Kisi-Kisi -->
+                    <div id="preview-wrapper" class="hidden mt-5">
+                        <div class="flex items-center justify-between mb-2">
+                            <label class="text-xs font-semibold uppercase tracking-wider text-slate-500">Pratinjau Data Kisi-Kisi Terbaca (Dapat Diedit):</label>
+                            <span id="row-count-badge" class="text-xs bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded font-medium"></span>
+                        </div>
+                        <textarea id="extracted-text" rows="6" class="w-full text-xs font-mono bg-slate-50 border border-slate-200 rounded-xl p-3 text-slate-700 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none" placeholder="Isi kisi-kisi akan muncul di sini..."></textarea>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Kolom Kanan: Konfigurasi Spesifikasi Soal -->
+            <div class="lg:col-span-5 flex flex-col gap-6">
+                <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 flex-grow flex flex-col justify-between">
+                    <div>
+                        <h2 class="text-base font-semibold text-slate-900 flex items-center gap-2 mb-4">
+                            <span class="bg-blue-100 text-blue-700 w-6 h-6 rounded-full inline-flex items-center justify-center text-xs font-bold">2</span>
+                            Parameter & Presisi Soal
+                        </h2>
+
+                        <div class="space-y-4">
+                            <div>
+                                <label class="block text-xs font-medium text-slate-700 mb-1">Mata Pelajaran / Topik Umum</label>
+                                <input type="text" id="subject-input" placeholder="Contoh: Ilmu Pengetahuan Alam (IPA)" class="w-full px-3.5 py-2 text-sm border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none">
+                            </div>
+
+                            <div class="grid grid-cols-2 gap-3">
+                                <div>
+                                    <label class="block text-xs font-medium text-slate-700 mb-1">Jenjang / Kelas</label>
+                                    <select id="grade-input" class="w-full px-3 py-2 text-sm border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none bg-white">
+                                        <option value="Sesuai Kisi-Kisi">Sesuai Kisi-Kisi</option>
+                                        <option value="SD / MI">SD / MI</option>
+                                        <option value="SMP / MTs">SMP / MTs</option>
+                                        <option value="SMA / SMK / MA">SMA / SMK / MA</option>
+                                        <option value="Perguruan Tinggi">Perguruan Tinggi</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-medium text-slate-700 mb-1">Opsi Pilihan Ganda</label>
+                                    <select id="options-count" class="w-full px-3 py-2 text-sm border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none bg-white">
+                                        <option value="4">4 Opsi (A - D)</option>
+                                        <option value="5">5 Opsi (A - E)</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div>
+                                <label class="block text-xs font-medium text-slate-700 mb-1">Instruksi Tambahan (Opsional)</label>
+                                <textarea id="custom-instruction" rows="2" placeholder="Contoh: Gunakan stimulus cerita/studi kasus kontekstual pada setiap soal HOTS (C4-C6)..." class="w-full px-3.5 py-2 text-sm border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"></textarea>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="mt-6 pt-4 border-t border-slate-100">
+                        <button id="generate-btn" onclick="generateAssessment()" class="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-slate-300 disabled:cursor-not-allowed text-white font-semibold py-3 px-4 rounded-xl shadow-sm transition flex items-center justify-center gap-2">
+                            <i class="fa-solid fa-wand-magic-sparkles"></i>
+                            <span>Generate Soal Akurat Sekarang</span>
+                        </button>
+                        <p class="text-[11px] text-center text-slate-400 mt-2">
+                            AI akan memetakan setiap baris indikator, level kognitif (Bloom), dan bentuk soal secara presisi.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Loading State -->
+        <div id="loading-section" class="hidden my-12 text-center py-12 bg-white rounded-2xl border border-slate-200 shadow-sm">
+            <div class="inline-block animate-spin rounded-full h-12 w-12 border-4 border-blue-600 border-t-transparent mb-4"></div>
+            <h3 class="text-lg font-bold text-slate-800">Menganalisis Kisi-Kisi & Menyusun Soal...</h3>
+            <p class="text-sm text-slate-500 max-w-md mx-auto mt-1">Sedang menyelaraskan indikator pencapaian kompetensi, level kognitif, stimulus soal, serta pengecoh (distractor) yang logis.</p>
+        </div>
+
+        <!-- Langkah 2: Hasil Generate Soal -->
+        <div id="result-section" class="hidden mt-8">
+            <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden print-container">
+                
+                <!-- Toolbar Hasil -->
+                <div class="bg-slate-50 px-6 py-4 border-b border-slate-200 flex flex-wrap items-center justify-between gap-4 no-print">
+                    <div>
+                        <h3 class="font-bold text-slate-900 text-lg flex items-center gap-2">
+                            <i class="fa-solid fa-file-circle-check text-emerald-600"></i>
+                            Hasil Instrumen Asesmen
+                        </h3>
+                        <p id="result-subtitle" class="text-xs text-slate-500">Berhasil menyusun soal sesuai indikator kisi-kisi</p>
+                    </div>
+
+                    <div class="flex flex-wrap items-center gap-2">
+                        <button onclick="toggleAnswerKey()" id="toggle-key-btn" class="text-xs sm:text-sm bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-200 font-medium py-2 px-3 rounded-xl transition flex items-center gap-1.5">
+                            <i class="fa-solid fa-eye"></i>
+                            <span>Sembunyikan Kunci & Pembahasan</span>
+                        </button>
+                        <button onclick="copyAllQuestions()" class="text-xs sm:text-sm bg-white hover:bg-slate-100 text-slate-700 border border-slate-300 font-medium py-2 px-3 rounded-xl transition flex items-center gap-1.5">
+                            <i class="fa-regular fa-copy"></i>
+                            <span>Salin Teks</span>
+                        </button>
+                        <button onclick="exportToWord()" class="text-xs sm:text-sm bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-3.5 rounded-xl shadow-sm transition flex items-center gap-1.5">
+                            <i class="fa-solid fa-file-word"></i>
+                            <span>Unduh Word (.doc)</span>
+                        </button>
+                        <button onclick="window.print()" class="text-xs sm:text-sm bg-slate-800 hover:bg-slate-900 text-white font-medium py-2 px-3.5 rounded-xl shadow-sm transition flex items-center gap-1.5">
+                            <i class="fa-solid fa-print"></i>
+                            <span>Cetak / PDF</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Kontainer Daftar Soal -->
+                <div id="questions-container" class="p-6 sm:p-8 space-y-6">
+                    <!-- Soal akan dirender di sini -->
+                </div>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-white border-t border-slate-200 py-5 mt-12 no-print">
+        <div class="max-w-7xl mx-auto px-4 text-center text-xs text-slate-500">
+            AsesmenGen AI &bull; Dirancang untuk membantu pendidik menyusun evaluasi pembelajaran yang valid, reliabel, dan akurat sesuai kisi-kisi.
+        </div>
+    </footer>
+
+    <script>
+        // State Global Aplikasi
+        let extractedKisiContent = "";
+        let generatedQuestionsData = [];
+        let showAnswers = true;
+
+        // Elemen DOM
+        const dropZone = document.getElementById('drop-zone');
+        const fileInput = document.getElementById('file-input');
+        const fileInfo = document.getElementById('file-info');
+        const fileNameEl = document.getElementById('file-name');
+        const fileMetaEl = document.getElementById('file-meta');
+        const fileIconEl = document.getElementById('file-icon');
+        const previewWrapper = document.getElementById('preview-wrapper');
+        const extractedTextEl = document.getElementById('extracted-text');
+        const rowCountBadge = document.getElementById('row-count-badge');
+
+        // Sistem Notifikasi Toast
+        function showToast(message, type = 'info') {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            
+            const colors = {
+                success: 'bg-emerald-600 text-white',
+                error: 'bg-red-600 text-white',
+                info: 'bg-slate-800 text-white',
+                warning: 'bg-amber-500 text-white'
+            };
+            const icons = {
+                success: 'fa-circle-check',
+                error: 'fa-circle-exclamation',
+                info: 'fa-circle-info',
+                warning: 'fa-triangle-exclamation'
+            };
+
+            toast.className = `${colors[type]} px-4 py-3 rounded-xl shadow-lg flex items-center gap-3 text-sm font-medium pointer-events-auto transform transition-all duration-300 translate-y-2 opacity-0`;
+            toast.innerHTML = `<i class="fa-solid ${icons[type]} text-base"></i><span>${message}</span>`;
+            
+            container.appendChild(toast);
+            requestAnimationFrame(() => {
+                toast.classList.remove('translate-y-2', 'opacity-0');
+            });
+
+            setTimeout(() => {
+                toast.classList.add('opacity-0', 'translate-y-2');
+                setTimeout(() => toast.remove(), 300);
+            }, 4000);
+        }
+
+        // Event Listeners Drag & Drop
+        dropZone.addEventListener('click', () => fileInput.click());
+        dropZone.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            dropZone.classList.add('dragover');
+        });
+        dropZone.addEventListener('dragleave', () => dropZone.classList.remove('dragover'));
+        dropZone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            dropZone.classList.remove('dragover');
+            if (e.dataTransfer.files.length) {
+                handleFileUpload(e.dataTransfer.files[0]);
+            }
+        });
+        fileInput.addEventListener('change', (e) => {
+            if (e.target.files.length) {
+                handleFileUpload(e.target.files[0]);
+            }
+        });
+
+        // Fungsi Utama Memproses File Excel atau Word
+        async function handleFileUpload(file) {
+            const fileName = file.name;
+            const ext = fileName.split('.').pop().toLowerCase();
+
+            if (!['xlsx', 'xls', 'csv', 'docx'].includes(ext)) {
+                showToast('Format file tidak didukung. Harap unggah Excel (.xlsx/.xls/.csv) atau Word (.docx).', 'error');
+                return;
+            }
+
+            fileNameEl.textContent = fileName;
+            fileMetaEl.textContent = `${(file.size / 1024).toFixed(1)} KB • Mengekstrak struktur kisi-kisi...`;
+            fileInfo.classList.remove('hidden');
+
+            if (ext === 'docx') {
+                fileIconEl.className = 'fa-solid fa-file-word text-blue-600 text-2xl flex-shrink-0';
+                await parseWordFile(file);
+            } else {
+                fileIconEl.className = 'fa-solid fa-file-excel text-emerald-600 text-2xl flex-shrink-0';
+                await parseExcelFile(file);
+            }
+        }
+
+        // Ekstraksi File Excel dengan SheetJS
+        async function parseExcelFile(file) {
+            try {
+                const data = await file.arrayBuffer();
+                const workbook = XLSX.read(data, { type: 'array' });
+                let fullParsedText = "";
+                let totalRows = 0;
+
+                workbook.SheetNames.forEach(sheetName => {
+                    const worksheet = workbook.Sheets[sheetName];
+                    const jsonRows = XLSX.utils.sheet_to_json(worksheet, { header: 1, defval: "" });
+                    
+                    // Filter baris yang tidak kosong melompong
+                    const validRows = jsonRows.filter(row => row.some(cell => String(cell).trim() !== ""));
+                    if (validRows.length > 0) {
+                        fullParsedText += `=== SHEET: ${sheetName} ===\n`;
+                        validRows.forEach((row, idx) => {
+                            const rowText = row.map(c => String(c).replace(/\n/g, ' ').trim()).join(' | ');
+                            fullParsedText += `Baris ${idx + 1}: ${rowText}\n`;
+                        });
+                        totalRows += validRows.length;
+                    }
+                });
+
+                if (!fullParsedText.trim()) {
+                    throw new Error("File Excel kosong atau tidak memiliki teks.");
+                }
+
+                extractedKisiContent = fullParsedText;
+                extractedTextEl.value = fullParsedText;
+                previewWrapper.classList.remove('hidden');
+                rowCountBadge.textContent = `${totalRows} Baris Data Terdeteksi`;
+                fileMetaEl.textContent = `${(file.size / 1024).toFixed(1)} KB • Berhasil diekstrak`;
+                showToast('Kisi-kisi Excel berhasil dibaca!', 'success');
+            } catch (err) {
+                console.error(err);
+                showToast('Gagal membaca file Excel: ' + err.message, 'error');
+                resetFile();
+            }
+        }
+
+        // Ekstraksi File Word (.docx) dengan Mammoth.js
+        async function parseWordFile(file) {
+            try {
+                const arrayBuffer = await file.arrayBuffer();
+                // Menggunakan convertToHtml agar struktur tabel <tr><td> tetap terjaga presisi
+                const result = await mammoth.convertToHtml({ arrayBuffer: arrayBuffer });
+                const htmlContent = result.value;
+
+                const parser = new DOMParser();
+                const doc = parser.parseFromString(htmlContent, 'text/html');
+                const tables = doc.querySelectorAll('table');
+                let structuredText = "";
+                let rowCounter = 0;
+
+                if (tables.length > 0) {
+                    tables.forEach((table, tIdx) => {
+                        structuredText += `=== TABEL KISI-KISI ${tIdx + 1} ===\n`;
+                        const rows = table.querySelectorAll('tr');
+                        rows.forEach((tr, rIdx) => {
+                            const cells = Array.from(tr.querySelectorAll('td, th')).map(td => td.textContent.replace(/\s+/g, ' ').trim());
+                            if (cells.some(c => c !== "")) {
+                                structuredText += `Baris ${rIdx + 1}: ${cells.join(' | ')}\n`;
+                                rowCounter++;
+                            }
+                        });
+                        structuredText += "\n";
+                    });
+                } else {
+                    // Fallback jika kisi-kisi berbentuk paragraf biasa
+                    const rawResult = await mammoth.extractRawText({ arrayBuffer: arrayBuffer });
+                    structuredText = rawResult.value;
+                    rowCounter = structuredText.split('\n').filter(l => l.trim() !== '').length;
+                }
+
+                if (!structuredText.trim()) {
+                    throw new Error("Dokumen Word kosong.");
+                }
+
+                extractedKisiContent = structuredText;
+                extractedTextEl.value = structuredText;
+                previewWrapper.classList.remove('hidden');
+                rowCountBadge.textContent = `${rowCounter} Baris/Item Terdeteksi`;
+                fileMetaEl.textContent = `${(file.size / 1024).toFixed(1)} KB • Berhasil diekstrak`;
+                showToast('Kisi-kisi Word (.docx) berhasil dibaca!', 'success');
+            } catch (err) {
+                console.error(err);
+                showToast('Gagal membaca file Word: ' + err.message, 'error');
+                resetFile();
+            }
+        }
+
+        function resetFile() {
+            fileInput.value = "";
+            extractedKisiContent = "";
+            extractedTextEl.value = "";
+            fileInfo.classList.add('hidden');
+            previewWrapper.classList.add('hidden');
+        }
+
+        // Download Contoh Template Kisi-Kisi Excel
+        function downloadSampleExcel() {
+            const sampleData = [
+                ["No Soal", "Kompetensi Dasar / CP", "Materi Pokok", "Indikator Soal", "Level Kognitif", "Bentuk Soal"],
+                [1, "Menganalisis interaksi makhluk hidup dengan lingkungannya", "Ekosistem & Rantai Makanan", "Disajikan ilustrasi gangguan pada salah satu populasi dalam ekosistem sawah, peserta didik dapat memprediksi dampak yang terjadi pada populasi lainnya.", "C4 (Menganalisis)", "Pilihan Ganda"],
+                [2, "Memahami konsep perubahan wujud benda dalam kehidupan sehari-hari", "Perubahan Wujud Zat", "Peserta didik dapat mengidentifikasi peristiwa menyublim berdasarkan contoh kegiatan sehari-hari.", "C2 (Memahami)", "Pilihan Ganda"],
+                [3, "Menerapkan konsep kalor dan perpindahannya", "Perpindahan Kalor", "Disajikan studi kasus penggunaan peralatan masak berbahan logam dan kayu, peserta didik dapat menjelaskan alasan pemilihan bahan tersebut berdasarkan sifat konduktivitas termal.", "C3 (Menerapkan)", "Uraian"]
+            ];
+
+            const ws = XLSX.utils.aoa_to_sheet(sampleData);
+            ws['!cols'] = [{wch: 8}, {wch: 35}, {wch: 25}, {wch: 55}, {wch: 18}, {wch: 16}];
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, "Kisi-Kisi Soal");
+            XLSX.writeFile(wb, "Template_Kisi_Kisi_AsesmenGen.xlsx");
+            showToast('Template Excel contoh berhasil diunduh!', 'success');
+        }
+
+        // Fungsi Fetch ke Gemini API dengan Exponential Backoff
+        async function fetchGeminiWithBackoff(payload, retries = 5, delay = 1000) {
+            const apiKey = ""; // Otomatis disediakan oleh environment runtime
+            const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=${apiKey}`;
+
+            for (let i = 0; i < retries; i++) {
+                try {
+                    const response = await fetch(apiUrl, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(payload)
+                    });
+
+                    if (!response.ok) {
+                        throw new Error(`HTTP Error: ${response.status}`);
+                    }
+                    return await response.json();
+                } catch (err) {
+                    if (i === retries - 1) throw err;
+                    await new Promise(res => setTimeout(res, delay));
+                    delay *= 2;
+                }
+            }
+        }
+
+        // Proses Pembuatan Soal Menggunakan Gemini Structured Output
+        async function generateAssessment() {
+            const currentKisi = extractedTextEl.value.trim();
+            if (!currentKisi) {
+                showToast('Silakan unggah file kisi-kisi Word/Excel terlebih dahulu!', 'warning');
+                return;
+            }
+
+            const subject = document.getElementById('subject-input').value.trim() || "Sesuai Kisi-Kisi";
+            const grade = document.getElementById('grade-input').value;
+            const optionsCount = document.getElementById('options-count').value;
+            const customInstruction = document.getElementById('custom-instruction').value.trim();
+
+            const generateBtn = document.getElementById('generate-btn');
+            const loadingSection = document.getElementById('loading-section');
+            const resultSection = document.getElementById('result-section');
+
+            generateBtn.disabled = true;
+            loadingSection.classList.remove('hidden');
+            resultSection.classList.add('hidden');
+            loadingSection.scrollIntoView({ behavior: 'smooth', block: 'center' });
+
+            const systemPrompt = `Anda adalah Pakar Evaluasi Pendidikan dan Penyusun Soal Asesmen Profesional di Indonesia.
+Tugas Anda adalah membuat soal asesmen yang SANGAT AKURAT, VALID, dan 100% PRESISI mengikuti setiap baris pada dokumen kisi-kisi yang diberikan.
+
+ATURAN KETAT PENYUSUNAN SOAL:
+1. Baca setiap baris indikator soal, nomor soal, materi, level kognitif (Taksonomi Bloom C1-C6 / L1-L3), dan bentuk soal pada kisi-kisi.
+2. Jumlah dan urutan soal HARUS sesuai dengan jumlah item indikator soal pada kisi-kisi (abaikan baris header tabel).
+3. Jika indikator menyebutkan "Disajikan ilustrasi/kasus/data/wacana/kutipan...", Anda WAJIB membuat stimulus tersebut secara lengkap dan bermakna sebelum pertanyaan inti.
+4. Untuk soal Pilihan Ganda, buatlah tepat ${optionsCount} pilihan jawaban (A sampai ${optionsCount === '4' ? 'D' : 'E'}) dengan pengecoh (distractor) yang homogen, logis, dan tidak mengandung petunjuk jawaban yang mencolok.
+5. Untuk soal Uraian / Isian Singkat, kosongkan array 'options', dan berikan pedoman penskoran / jawaban lengkap pada field 'explanation'.
+6. Sertakan kunci jawaban yang benar dan pembahasan mendalam mengapa jawaban tersebut benar.`;
+
+            const userQuery = `Buatlah perangkat soal asesmen berdasarkan kisi-kisi berikut:
+- Mata Pelajaran: ${subject}
+- Jenjang/Kelas: ${grade}
+- Jumlah Opsi PG: ${optionsCount} opsi
+- Catatan Tambahan: ${customInstruction || "Tidak ada"}
+
+DATA KISI-KISI:
+${currentKisi}`;
+
+            const payload = {
+                contents: [{ parts: [{ text: userQuery }] }],
+                systemInstruction: { parts: [{ text: systemPrompt }] },
+                generationConfig: {
+                    responseMimeType: "application/json",
+                    responseSchema: {
+                        type: "OBJECT",
+                        properties: {
+                            judulAsesmen: { type: "STRING", description: "Judul instrumen asesmen yang sesuai" },
+                            daftarSoal: {
+                                type: "ARRAY",
+                                items: {
+                                    type: "OBJECT",
+                                    properties: {
+                                        nomorSoal: { type: "INTEGER" },
+                                        bentukSoal: { type: "STRING", description: "Contoh: Pilihan Ganda, Uraian, Isian Singkat" },
+                                        levelKognitif: { type: "STRING", description: "Contoh: C4 (Menganalisis)" },
+                                        indikatorTerkait: { type: "STRING", description: "Ringkasan indikator dari kisi-kisi yang diukur" },
+                                        stimulus: { type: "STRING", description: "Teks bacaan, studi kasus, data tabel teks, atau ilustrasi jika diperlukan indikator (kosongkan jika tidak perlu)" },
+                                        pertanyaan: { type: "STRING", description: "Kalimat pokok soal / pertanyaan" },
+                                        pilihanJawaban: {
+                                            type: "ARRAY",
+                                            items: {
+                                                type: "OBJECT",
+                                                properties: {
+                                                    huruf: { type: "STRING" },
+                                                    teks: { type: "STRING" }
+                                                }
+                                            }
+                                        },
+                                        kunciJawaban: { type: "STRING", description: "Huruf kunci jawaban (untuk PG) atau poin jawaban singkat (untuk Uraian)" },
+                                        pembahasan: { type: "STRING", description: "Penjelasan rasional kunci jawaban atau rubrik penskoran uraian" }
+                                    },
+                                    required: ["nomorSoal", "bentukSoal", "levelKognitif", "indikatorTerkait", "pertanyaan", "kunciJawaban", "pembahasan"]
+                                }
+                            }
+                        },
+                        required: ["judulAsesmen", "daftarSoal"]
+                    }
+                }
+            };
+
+            try {
+                const result = await fetchGeminiWithBackoff(payload);
+                const rawJsonText = result?.candidates?.[0]?.content?.parts?.[0]?.text;
+                if (!rawJsonText) {
+                    throw new Error("Respons AI kosong atau tidak valid.");
+                }
+
+                const parsed = JSON.parse(rawJsonText);
+                generatedQuestionsData = parsed;
+                renderQuestions(parsed);
+                
+                resultSection.classList.remove('hidden');
+                resultSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                showToast(`Berhasil menghasilkan ${parsed.daftarSoal.length} soal akurat!`, 'success');
+            } catch (error) {
+                console.error("Generation Error:", error);
+                showToast('Terjadi kesalahan saat menyusun soal. Silakan coba lagi.', 'error');
+            } finally {
+                generateBtn.disabled = false;
+                loadingSection.classList.add('hidden');
+            }
+        }
+
+        // Render Daftar Soal ke Antarmuka
+        function renderQuestions(data) {
+            const container = document.getElementById('questions-container');
+            const subtitle = document.getElementById('result-subtitle');
+            subtitle.textContent = `${data.judulAsesmen} • Total ${data.daftarSoal.length} Butir Soal`;
+
+            container.innerHTML = "";
+
+            data.daftarSoal.forEach((item, index) => {
+                const isPG = item.pilihanJawaban && item.pilihanJawaban.length > 0;
+                
+                let optionsHtml = "";
+                if (isPG) {
+                    optionsHtml = `<div class="mt-3 space-y-2 pl-1">
+                        ${item.pilihanJawaban.map(opt => {
+                            const isCorrect = opt.huruf.toUpperCase() === item.kunciJawaban.trim().toUpperCase();
+                            return `
+                                <div class="flex items-start gap-2.5 p-2 rounded-lg border ${showAnswers && isCorrect ? 'bg-emerald-50/80 border-emerald-300 font-medium text-emerald-950' : 'border-transparent text-slate-700'}">
+                                    <span class="font-bold text-sm w-5 flex-shrink-0">${opt.huruf}.</span>
+                                    <span class="text-sm leading-relaxed">${escapeHtml(opt.teks)}</span>
+                                </div>
+                            `;
+                        }).join('')}
+                    </div>`;
+                }
+
+                const stimulusHtml = item.stimulus && item.stimulus.trim() !== "" ? `
+                    <div class="mb-3 p-3.5 bg-slate-50 border-l-4 border-blue-500 rounded-r-xl text-sm text-slate-700 leading-relaxed whitespace-pre-line">
+                        ${escapeHtml(item.stimulus)}
+                    </div>
+                ` : "";
+
+                const answerBoxHtml = `
+                    <div class="answer-box mt-4 pt-3 border-t border-dashed border-slate-200 ${showAnswers ? '' : 'hidden'} no-print-hide">
+                        <div class="bg-emerald-50/60 border border-emerald-200/80 rounded-xl p-3.5 text-xs sm:text-sm">
+                            <div class="flex items-center gap-2 font-bold text-emerald-800 mb-1">
+                                <i class="fa-solid fa-key"></i>
+                                <span>Kunci Jawaban: ${escapeHtml(item.kunciJawaban)}</span>
+                            </div>
+                            <p class="text-slate-700 leading-relaxed"><span class="font-semibold">Pembahasan:</span> ${escapeHtml(item.pembahasan)}</p>
+                        </div>
+                    </div>
+                `;
+
+                const card = document.createElement('div');
+                card.className = "p-5 rounded-2xl border border-slate-200 bg-white shadow-xs hover:border-slate-300 transition";
+                card.innerHTML = `
+                    <!-- Metadata Kisi-Kisi Badge -->
+                    <div class="flex flex-wrap items-center justify-between gap-2 pb-3 mb-3 border-b border-slate-100 no-print">
+                        <div class="flex flex-wrap items-center gap-2">
+                            <span class="bg-blue-600 text-white text-xs font-bold px-2.5 py-1 rounded-lg">Soal No. ${item.nomorSoal}</span>
+                            <span class="bg-purple-50 text-purple-700 border border-purple-200 text-xs font-medium px-2.5 py-0.5 rounded-lg">${escapeHtml(item.levelKognitif)}</span>
+                            <span class="bg-slate-100 text-slate-600 text-xs font-medium px-2.5 py-0.5 rounded-lg">${escapeHtml(item.bentukSoal)}</span>
+                        </div>
+                        <button onclick="regenerateSingleQuestion(${index})" class="text-xs text-slate-500 hover:text-blue-600 flex items-center gap-1 px-2 py-1 rounded-lg hover:bg-blue-50 transition" title="Buat ulang khusus nomor ini">
+                            <i class="fa-solid fa-rotate-right"></i> Buat Ulang
+                        </button>
+                    </div>
+
+                    <!-- Indikator Acuan -->
+                    <div class="mb-3 text-xs text-slate-500 bg-slate-50 px-3 py-1.5 rounded-lg border border-slate-100 no-print">
+                        <span class="font-semibold text-slate-600">Indikator Kisi-Kisi:</span> ${escapeHtml(item.indikatorTerkait)}
+                    </div>
+
+                    <!-- Konten Soal -->
+                    <div class="flex gap-3">
+                        <span class="font-bold text-slate-900 text-sm sm:text-base">${item.nomorSoal}.</span>
+                        <div class="flex-grow">
+                            ${stimulusHtml}
+                            <p class="text-sm sm:text-base text-slate-900 font-medium leading-relaxed whitespace-pre-line">${escapeHtml(item.pertanyaan)}</p>
+                            ${optionsHtml}
+                            ${answerBoxHtml}
+                        </div>
+                    </div>
+                `;
+                container.appendChild(card);
+            });
+        }
+
+        // Regenerasi Satu Nomor Soal Tertentu
+        async function regenerateSingleQuestion(index) {
+            const targetItem = generatedQuestionsData.daftarSoal[index];
+            showToast(`Menyusun ulang Soal No. ${targetItem.nomorSoal}...`, 'info');
+
+            const optionsCount = document.getElementById('options-count').value;
+            const prompt = `Buat ulang 1 butir soal pengganti yang berbeda namun tetap 100% akurat mengukur indikator berikut:
+Nomor Soal: ${targetItem.nomorSoal}
+Bentuk Soal: ${targetItem.bentukSoal}
+Level Kognitif: ${targetItem.levelKognitif}
+Indikator: ${targetItem.indikatorTerkait}
+Jumlah Opsi PG (jika PG): ${optionsCount}`;
+
+            const payload = {
+                contents: [{ parts: [{ text: prompt }] }],
+                generationConfig: {
+                    responseMimeType: "application/json",
+                    responseSchema: {
+                        type: "OBJECT",
+                        properties: {
+                            nomorSoal: { type: "INTEGER" },
+                            bentukSoal: { type: "STRING" },
+                            levelKognitif: { type: "STRING" },
+                            indikatorTerkait: { type: "STRING" },
+                            stimulus: { type: "STRING" },
+                            pertanyaan: { type: "STRING" },
+                            pilihanJawaban: {
+                                type: "ARRAY",
+                                items: {
+                                    type: "OBJECT",
+                                    properties: {
+                                        huruf: { type: "STRING" },
+                                        teks: { type: "STRING" }
+                                    }
+                                }
+                            },
+                            kunciJawaban: { type: "STRING" },
+                            pembahasan: { type: "STRING" }
+                        },
+                        required: ["nomorSoal", "bentukSoal", "levelKognitif", "indikatorTerkait", "pertanyaan", "kunciJawaban", "pembahasan"]
+                    }
+                }
+            };
+
+            try {
+                const res = await fetchGeminiWithBackoff(payload);
+                const newQuestion = JSON.parse(res.candidates[0].content.parts[0].text);
+                newQuestion.nomorSoal = targetItem.nomorSoal;
+                generatedQuestionsData.daftarSoal[index] = newQuestion;
+                renderQuestions(generatedQuestionsData);
+                showToast(`Soal No. ${targetItem.nomorSoal} berhasil diperbarui!`, 'success');
+            } catch (e) {
+                showToast('Gagal memperbarui soal.', 'error');
+            }
+        }
+
+        // Toggle Tampilkan/Sembunyikan Kunci Jawaban
+        function toggleAnswerKey() {
+            showAnswers = !showAnswers;
+            const btn = document.getElementById('toggle-key-btn');
+            btn.innerHTML = showAnswers 
+                ? `<i class="fa-solid fa-eye"></i><span>Sembunyikan Kunci & Pembahasan</span>`
+                : `<i class="fa-solid fa-eye-slash"></i><span>Tampilkan Kunci & Pembahasan</span>`;
+            renderQuestions(generatedQuestionsData);
+        }
+
+        // Salin Semua Soal ke Clipboard (menggunakan execCommand sesuai aturan iframe)
+        function copyAllQuestions() {
+            if (!generatedQuestionsData.daftarSoal) return;
+
+            let textOutput = `${generatedQuestionsData.judulAsesmen.toUpperCase()}\n\n`;
+            generatedQuestionsData.daftarSoal.forEach(q => {
+                textOutput += `${q.nomorSoal}. `;
+                if (q.stimulus) textOutput += `${q.stimulus}\n`;
+                textOutput += `${q.pertanyaan}\n`;
+                if (q.pilihanJawaban && q.pilihanJawaban.length > 0) {
+                    q.pilihanJawaban.forEach(opt => {
+                        textOutput += `   ${opt.huruf}. ${opt.teks}\n`;
+                    });
+                }
+                if (showAnswers) {
+                    textOutput += `   [Kunci: ${q.kunciJawaban} | Pembahasan: ${q.pembahasan}]\n`;
+                }
+                textOutput += `\n`;
+            });
+
+            const textArea = document.createElement("textarea");
+            textArea.value = textOutput;
+            document.body.appendChild(textArea);
+            textArea.select();
+            try {
+                document.execCommand('copy');
+                showToast('Seluruh naskah soal berhasil disalin ke clipboard!', 'success');
+            } catch (err) {
+                showToast('Gagal menyalin teks.', 'error');
+            }
+            document.body.removeChild(textArea);
+        }
+
+        // Ekspor Hasil ke Dokumen Microsoft Word (.doc)
+        function exportToWord() {
+            if (!generatedQuestionsData.daftarSoal) return;
+
+            let htmlContent = `
+                <html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'>
+                <head><meta charset='utf-8'><title>${generatedQuestionsData.judulAsesmen}</title>
+                <style>
+                    body { font-family: 'Times New Roman', serif; font-size: 12pt; line-height: 1.5; }
+                    h2 { text-align: center; text-transform: uppercase; margin-bottom: 20px; }
+                    .soal-block { margin-bottom: 16px; }
+                    .stimulus { background-color: #f4f4f4; padding: 8px; border-left: 3px solid #333; margin-bottom: 6px; }
+                    .opsi { margin-left: 24px; }
+                    .kunci-section { page-break-before: always; margin-top: 30px; }
+                    table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+                    th, td { border: 1px solid #000; padding: 6px; text-align: left; font-size: 10.5pt; }
+                </style>
+                </head><body>
+                <h2>${escapeHtml(generatedQuestionsData.judulAsesmen)}</h2>
+            `;
+
+            // Bagian Naskah Soal
+            generatedQuestionsData.daftarSoal.forEach(q => {
+                htmlContent += `<div class="soal-block">`;
+                if (q.stimulus) {
+                    htmlContent += `<div class="stimulus">${escapeHtml(q.stimulus).replace(/\n/g, '<br>')}</div>`;
+                }
+                htmlContent += `<p><strong>${q.nomorSoal}.</strong> ${escapeHtml(q.pertanyaan).replace(/\n/g, '<br>')}</p>`;
+                if (q.pilihanJawaban && q.pilihanJawaban.length > 0) {
+                    q.pilihanJawaban.forEach(opt => {
+                        htmlContent += `<div class="opsi">${opt.huruf}. ${escapeHtml(opt.teks)}</div>`;
+                    });
+                }
+                htmlContent += `</div>`;
+            });
+
+            // Bagian Kunci Jawaban & Pembahasan di Halaman Baru
+            htmlContent += `
+                <div class="kunci-section">
+                    <h3>KUNCI JAWABAN, PEMBAHASAN & PEMETAAN KISI-KISI</h3>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th style="width: 8%;">No</th>
+                                <th style="width: 15%;">Level / Bentuk</th>
+                                <th style="width: 15%;">Kunci</th>
+                                <th>Pembahasan & Pedoman Penskoran</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+            `;
+
+            generatedQuestionsData.daftarSoal.forEach(q => {
+                htmlContent += `
+                    <tr>
+                        <td>${q.nomorSoal}</td>
+                        <td>${escapeHtml(q.levelKognitif)}<br>(${escapeHtml(q.bentukSoal)})</td>
+                        <td><strong>${escapeHtml(q.kunciJawaban)}</strong></td>
+                        <td>${escapeHtml(q.pembahasan)}</td>
+                    </tr>
+                `;
+            });
+
+            htmlContent += `</tbody></table></div></body></html>`;
+
+            const blob = new Blob(['\ufeff', htmlContent], { type: 'application/msword' });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = `Naskah_Soal_${generatedQuestionsData.judulAsesmen.replace(/[^a-zA-Z0-9]/g, '_')}.doc`;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            URL.revokeObjectURL(url);
+            showToast('File Word (.doc) siap digunakan!', 'success');
+        }
+
+        // Helper Sanitasi HTML
+        function escapeHtml(text) {
+            if (!text) return "";
+            return String(text)
+                .replace(/&/g, "&amp;")
+                .replace(/</g, "&lt;")
+                .replace(/>/g, "&gt;")
+                .replace(/"/g, "&quot;")
+                .replace(/'/g, "&#039;");
+        }
+    </script>
+</body>
+</html>
